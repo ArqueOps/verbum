@@ -21,11 +21,9 @@
   --foreground: #1A1A1A;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0F1419;
-    --foreground: #E8E6E1;
-  }
+.dark {
+  --background: #0F1720;
+  --foreground: #E8E6E1;
 }
 
 body {
