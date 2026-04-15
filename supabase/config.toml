@@ -21,7 +21,11 @@ api_url = "http://127.0.0.1"
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://verbum.vercel.app/**"]
+additional_redirect_urls = [
+  "https://verbum.vercel.app/**",
+  "http://127.0.0.1:3000/auth/callback",
+  "https://verbum.vercel.app/auth/callback",
+]
 jwt_expiry = 3600
 enable_signup = true
 enable_refresh_token_rotation = true
@@ -31,3 +35,26 @@ refresh_token_reuse_interval = 10
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
+
+# --- OAuth Providers ---
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_SECRET)"
+redirect_uri = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI)"
+
+[auth.external.apple]
+enabled = true
+client_id = "env(APPLE_CLIENT_ID)"
+secret = "env(APPLE_SECRET)"
+redirect_uri = "env(SUPABASE_AUTH_EXTERNAL_APPLE_REDIRECT_URI)"
+team_id = "env(APPLE_TEAM_ID)"
+key_id = "env(APPLE_KEY_ID)"
+private_key = "env(APPLE_PRIVATE_KEY)"
+
+[auth.external.github]
+enabled = true
+client_id = "env(GITHUB_CLIENT_ID)"
+secret = "env(GITHUB_SECRET)"
+redirect_uri = "env(SUPABASE_AUTH_EXTERNAL_GITHUB_REDIRECT_URI)"
