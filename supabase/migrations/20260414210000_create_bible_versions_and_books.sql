@@ -1,5 +1,9 @@
--- Migration: Create bible_versions and bible_books tables
--- Description: Core reference tables for Bible translations and canonical book catalog
+-- Migration: 00001_create_bible_versions_and_books
+-- Description: Creates bible_versions and bible_books reference tables for the Verbum app.
+--              bible_versions stores available Bible translations (NVI, ARA, KJV, etc.).
+--              bible_books stores the 66 canonical books with ordering and metadata.
+-- Rollback: DROP TABLE IF EXISTS bible_books; DROP TABLE IF EXISTS bible_versions;
+--           DROP FUNCTION IF EXISTS update_updated_at_column();
 
 -- =============================================================================
 -- Table: bible_versions
@@ -39,7 +43,6 @@ CREATE TABLE IF NOT EXISTS bible_books (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-  -- Sanity constraints
   CONSTRAINT bible_books_position_positive CHECK (position > 0),
   CONSTRAINT bible_books_total_chapters_positive CHECK (total_chapters > 0)
 );
@@ -75,7 +78,20 @@ CREATE TRIGGER trg_bible_books_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
--- RLS: Enable Row Level Security (policies delegated to Obadias)
+-- RLS: Enable Row Level Security with public read access
 -- =============================================================================
 ALTER TABLE bible_versions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bible_books ENABLE ROW LEVEL SECURITY;
+
+-- Public read policies: anon and authenticated can SELECT
+DROP POLICY IF EXISTS "bible_versions_public_read" ON bible_versions;
+CREATE POLICY "bible_versions_public_read"
+  ON bible_versions
+  FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "bible_books_public_read" ON bible_books;
+CREATE POLICY "bible_books_public_read"
+  ON bible_books
+  FOR SELECT
+  USING (true);
