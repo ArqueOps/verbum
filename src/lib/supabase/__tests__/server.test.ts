@@ -1,19 +1,30 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-const { mockCreateServerClient } = vi.hoisted(() => ({
-  mockCreateServerClient: vi.fn(() => ({
-    auth: { getSession: vi.fn() },
-    from: vi.fn(),
-  })),
-}));
+const { mockCreateServerClient, mockCookies } = vi.hoisted(() => {
+  const mockCookieStore = {
+    getAll: vi.fn().mockReturnValue([]),
+    set: vi.fn(),
+  };
+  return {
+    mockCreateServerClient: vi.fn(() => ({
+      auth: { getSession: vi.fn() },
+      from: vi.fn(),
+    })),
+    mockCookies: vi.fn().mockResolvedValue(mockCookieStore),
+  };
+});
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: mockCreateServerClient,
 }));
 
-import { createServerClient } from "../server";
+vi.mock("next/headers", () => ({
+  cookies: mockCookies,
+}));
 
-describe("createServerClient", () => {
+import { createClient } from "../server";
+
+describe("createClient", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -27,79 +38,44 @@ describe("createServerClient", () => {
     process.env = originalEnv;
   });
 
-  it("should return a SupabaseClient instance", () => {
-    // Arrange
-    const cookies = {
-      getAll: vi.fn().mockReturnValue([]),
-      setAll: vi.fn(),
-    };
+  it("should return a SupabaseClient instance", async () => {
+    const client = await createClient();
 
-    // Act
-    const client = createServerClient(cookies);
-
-    // Assert
     expect(client).toBeDefined();
     expect(client).toHaveProperty("auth");
     expect(client).toHaveProperty("from");
   });
 
-  it("should pass cookie handlers to @supabase/ssr createServerClient", () => {
-    // Arrange
-    const getAll = vi.fn().mockReturnValue([]);
-    const setAll = vi.fn();
-    const cookies = { getAll, setAll };
+  it("should call cookies() from next/headers", async () => {
+    await createClient();
 
-    // Act
-    createServerClient(cookies);
+    expect(mockCookies).toHaveBeenCalledOnce();
+  });
 
-    // Assert
+  it("should pass cookie handlers to @supabase/ssr createServerClient", async () => {
+    await createClient();
+
     expect(mockCreateServerClient).toHaveBeenCalledOnce();
     expect(mockCreateServerClient).toHaveBeenCalledWith(
       "https://test.supabase.co",
       "test-anon-key",
-      { cookies: { getAll, setAll } }
+      expect.objectContaining({
+        cookies: expect.objectContaining({
+          getAll: expect.any(Function),
+          setAll: expect.any(Function),
+        }),
+      })
     );
   });
 
-  it("should support optional setAll (read-only pages/components)", () => {
-    // Arrange
-    const getAll = vi.fn().mockReturnValue([]);
-    const cookies = { getAll };
+  it("should use env variables for Supabase URL and anon key", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://custom.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "custom-key";
 
-    // Act
-    createServerClient(cookies);
+    await createClient();
 
-    // Assert
-    expect(mockCreateServerClient).toHaveBeenCalledOnce();
     const callArgs = mockCreateServerClient.mock.calls[0] as unknown[];
-    const options = callArgs[2] as { cookies: { getAll: unknown; setAll?: unknown } };
-    expect(options.cookies.getAll).toBe(getAll);
-    expect(options.cookies.setAll).toBeUndefined();
-  });
-
-  it("should propagate env validation errors when url is missing", () => {
-    // Arrange
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const cookies = {
-      getAll: vi.fn().mockReturnValue([]),
-    };
-
-    // Act & Assert
-    expect(() => createServerClient(cookies)).toThrow(
-      "Missing environment variable: NEXT_PUBLIC_SUPABASE_URL"
-    );
-  });
-
-  it("should propagate env validation errors when anon key is missing", () => {
-    // Arrange
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const cookies = {
-      getAll: vi.fn().mockReturnValue([]),
-    };
-
-    // Act & Assert
-    expect(() => createServerClient(cookies)).toThrow(
-      "Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY"
-    );
+    expect(callArgs[0]).toBe("https://custom.supabase.co");
+    expect(callArgs[1]).toBe("custom-key");
   });
 });
