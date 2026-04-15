@@ -1,13 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-const { mockCreateServerClient } = vi.hoisted(() => ({
+const { mockCreateServerClient, mockCookies } = vi.hoisted(() => ({
   mockCreateServerClient: vi.fn(() => ({
     auth: { getSession: vi.fn() },
     from: vi.fn(),
   })),
-}));
-
-const { mockCookies } = vi.hoisted(() => ({
   mockCookies: vi.fn(),
 }));
 
@@ -41,25 +38,20 @@ describe("createClient", () => {
   });
 
   it("should return a SupabaseClient instance", async () => {
-    // Act
     const client = await createClient();
 
-    // Assert
     expect(client).toBeDefined();
     expect(client).toHaveProperty("auth");
     expect(client).toHaveProperty("from");
   });
 
   it("should pass cookie handlers to @supabase/ssr createServerClient", async () => {
-    // Arrange
     const getAll = vi.fn().mockReturnValue([]);
     const set = vi.fn();
     mockCookies.mockResolvedValue({ getAll, set });
 
-    // Act
     await createClient();
 
-    // Assert
     expect(mockCreateServerClient).toHaveBeenCalledOnce();
     expect(mockCreateServerClient).toHaveBeenCalledWith(
       "https://test.supabase.co",
@@ -73,39 +65,61 @@ describe("createClient", () => {
     );
   });
 
-  it("should delegate getAll to the cookie store", async () => {
-    // Arrange
-    const mockCookieValues = [{ name: "sb-token", value: "abc123" }];
-    const getAll = vi.fn().mockReturnValue(mockCookieValues);
+  it("should wire getAll to the cookie store", async () => {
+    const mockCookieList = [{ name: "session", value: "abc123" }];
+    const getAll = vi.fn().mockReturnValue(mockCookieList);
     mockCookies.mockResolvedValue({ getAll, set: vi.fn() });
 
-    // Act
     await createClient();
 
-    // Assert
     const callArgs = mockCreateServerClient.mock.calls[0] as unknown[];
     const options = callArgs[2] as { cookies: { getAll: () => unknown } };
-    const result = options.cookies.getAll();
-    expect(result).toEqual(mockCookieValues);
+    expect(options.cookies.getAll()).toEqual(mockCookieList);
   });
 
-  it("should delegate setAll to the cookie store without throwing in server components", async () => {
-    // Arrange
-    const set = vi.fn().mockImplementation(() => {
-      throw new Error("Cannot set cookies in Server Component");
+  it("should handle setAll calling cookieStore.set for each cookie", async () => {
+    const set = vi.fn();
+    mockCookies.mockResolvedValue({
+      getAll: vi.fn().mockReturnValue([]),
+      set,
     });
-    mockCookies.mockResolvedValue({ getAll: vi.fn().mockReturnValue([]), set });
 
-    // Act
     await createClient();
 
-    // Assert — setAll should not throw even when cookieStore.set throws
     const callArgs = mockCreateServerClient.mock.calls[0] as unknown[];
     const options = callArgs[2] as {
-      cookies: { setAll: (cookies: { name: string; value: string; options?: Record<string, unknown> }[]) => void };
+      cookies: {
+        setAll: (cookies: { name: string; value: string; options?: Record<string, unknown> }[]) => void;
+      };
     };
-    expect(() =>
-      options.cookies.setAll([{ name: "sb-token", value: "new-value", options: {} }])
-    ).not.toThrow();
+    options.cookies.setAll([
+      { name: "a", value: "1", options: { path: "/" } },
+      { name: "b", value: "2" },
+    ]);
+    expect(set).toHaveBeenCalledTimes(2);
+    expect(set).toHaveBeenCalledWith("a", "1", { path: "/" });
+    expect(set).toHaveBeenCalledWith("b", "2", undefined);
+  });
+
+  it("should not throw when setAll is called from a Server Component", async () => {
+    const set = vi.fn().mockImplementation(() => {
+      throw new Error("Cookies can only be modified in a Server Action or Route Handler");
+    });
+    mockCookies.mockResolvedValue({
+      getAll: vi.fn().mockReturnValue([]),
+      set,
+    });
+
+    await createClient();
+
+    const callArgs = mockCreateServerClient.mock.calls[0] as unknown[];
+    const options = callArgs[2] as {
+      cookies: {
+        setAll: (cookies: { name: string; value: string; options?: Record<string, unknown> }[]) => void;
+      };
+    };
+    expect(() => {
+      options.cookies.setAll([{ name: "a", value: "1" }]);
+    }).not.toThrow();
   });
 });
