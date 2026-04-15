@@ -330,7 +330,7 @@ describe("RLS Policies Integration Tests", () => {
     });
 
     it("should NOT allow user B to UPDATE user A's study", async () => {
-      const { error } = await userB.client
+      await userB.client
         .from("studies")
         .update({ title: "Hijacked Title" })
         .eq("id", publicStudyId);
@@ -347,7 +347,7 @@ describe("RLS Policies Integration Tests", () => {
     });
 
     it("should NOT allow user B to DELETE user A's study", async () => {
-      const { error } = await userB.client
+      await userB.client
         .from("studies")
         .delete()
         .eq("id", publicStudyId);
@@ -451,7 +451,7 @@ describe("RLS Policies Integration Tests", () => {
     });
 
     it("should NOT allow anon to read any subscriptions", async () => {
-      const { data, error } = await anonClient
+      const { data } = await anonClient
         .from("subscriptions")
         .select("*")
         .limit(5);
@@ -561,7 +561,7 @@ describe("RLS Policies Integration Tests", () => {
     });
 
     it("should NOT allow anon to read any payments", async () => {
-      const { data, error } = await anonClient
+      const { data } = await anonClient
         .from("payments")
         .select("*")
         .limit(5);
