@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+const mockCookieStore = {
+  getAll: vi.fn().mockReturnValue([]),
+  set: vi.fn(),
+};
+
 const { mockCreateServerClient } = vi.hoisted(() => ({
   mockCreateServerClient: vi.fn(() => ({
     auth: { getSession: vi.fn() },
@@ -11,9 +16,13 @@ vi.mock("@supabase/ssr", () => ({
   createServerClient: mockCreateServerClient,
 }));
 
-import { createServerClient } from "../server";
+vi.mock("next/headers", () => ({
+  cookies: vi.fn().mockResolvedValue(mockCookieStore),
+}));
 
-describe("createServerClient", () => {
+import { createClient } from "../server";
+
+describe("createClient", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -21,21 +30,16 @@ describe("createServerClient", () => {
     process.env = { ...originalEnv };
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
+    mockCookieStore.getAll.mockReturnValue([]);
   });
 
   afterEach(() => {
     process.env = originalEnv;
   });
 
-  it("should return a SupabaseClient instance", () => {
-    // Arrange
-    const cookies = {
-      getAll: vi.fn().mockReturnValue([]),
-      setAll: vi.fn(),
-    };
-
+  it("should return a SupabaseClient instance", async () => {
     // Act
-    const client = createServerClient(cookies);
+    const client = await createClient();
 
     // Assert
     expect(client).toBeDefined();
@@ -43,63 +47,32 @@ describe("createServerClient", () => {
     expect(client).toHaveProperty("from");
   });
 
-  it("should pass cookie handlers to @supabase/ssr createServerClient", () => {
-    // Arrange
-    const getAll = vi.fn().mockReturnValue([]);
-    const setAll = vi.fn();
-    const cookies = { getAll, setAll };
-
+  it("should pass cookie handlers to @supabase/ssr createServerClient", async () => {
     // Act
-    createServerClient(cookies);
-
-    // Assert
-    expect(mockCreateServerClient).toHaveBeenCalledOnce();
-    expect(mockCreateServerClient).toHaveBeenCalledWith(
-      "https://test.supabase.co",
-      "test-anon-key",
-      { cookies: { getAll, setAll } }
-    );
-  });
-
-  it("should support optional setAll (read-only pages/components)", () => {
-    // Arrange
-    const getAll = vi.fn().mockReturnValue([]);
-    const cookies = { getAll };
-
-    // Act
-    createServerClient(cookies);
+    await createClient();
 
     // Assert
     expect(mockCreateServerClient).toHaveBeenCalledOnce();
     const callArgs = mockCreateServerClient.mock.calls[0] as unknown[];
-    const options = callArgs[2] as { cookies: { getAll: unknown; setAll?: unknown } };
-    expect(options.cookies.getAll).toBe(getAll);
-    expect(options.cookies.setAll).toBeUndefined();
+    expect(callArgs[0]).toBe("https://test.supabase.co");
+    expect(callArgs[1]).toBe("test-anon-key");
+    const options = callArgs[2] as { cookies: { getAll: unknown; setAll: unknown } };
+    expect(options.cookies.getAll).toBeTypeOf("function");
+    expect(options.cookies.setAll).toBeTypeOf("function");
   });
 
-  it("should propagate env validation errors when url is missing", () => {
+  it("should use cookie store from next/headers", async () => {
     // Arrange
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const cookies = {
-      getAll: vi.fn().mockReturnValue([]),
-    };
+    const testCookies = [{ name: "sb-token", value: "abc123" }];
+    mockCookieStore.getAll.mockReturnValue(testCookies);
 
-    // Act & Assert
-    expect(() => createServerClient(cookies)).toThrow(
-      "Missing environment variable: NEXT_PUBLIC_SUPABASE_URL"
-    );
-  });
+    // Act
+    await createClient();
 
-  it("should propagate env validation errors when anon key is missing", () => {
-    // Arrange
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const cookies = {
-      getAll: vi.fn().mockReturnValue([]),
-    };
-
-    // Act & Assert
-    expect(() => createServerClient(cookies)).toThrow(
-      "Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY"
-    );
+    // Assert
+    const callArgs = mockCreateServerClient.mock.calls[0] as unknown[];
+    const options = callArgs[2] as { cookies: { getAll: () => unknown; setAll: unknown } };
+    const result = options.cookies.getAll();
+    expect(result).toEqual(testCookies);
   });
 });
