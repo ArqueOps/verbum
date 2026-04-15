@@ -145,7 +145,7 @@ describe("update_subscription_status function", () => {
     });
 
     // Call the function
-    const { data, error } = await admin.rpc("update_subscription_status");
+    const { error } = await admin.rpc("update_subscription_status");
 
     if (error) {
       console.warn("RPC call failed (function may not exist):", error.message);

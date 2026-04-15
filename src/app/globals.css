@@ -1,35 +1,94 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   /* Brand Colors — Azul Escriba */
-  --color-primary: #1E3A5F;
+  --color-primary: oklch(var(--primary));
   --color-primary-light: #2A4F7F;
   --color-primary-dark: #152B47;
+  --color-primary-foreground: oklch(var(--primary-foreground));
 
-  /* Semantic Colors */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* shadcn color tokens */
+  --color-background: oklch(var(--background));
+  --color-foreground: oklch(var(--foreground));
+  --color-card: oklch(var(--card));
+  --color-card-foreground: oklch(var(--card-foreground));
+  --color-popover: oklch(var(--popover));
+  --color-popover-foreground: oklch(var(--popover-foreground));
+  --color-secondary: oklch(var(--secondary));
+  --color-secondary-foreground: oklch(var(--secondary-foreground));
+  --color-muted: oklch(var(--muted));
+  --color-muted-foreground: oklch(var(--muted-foreground));
+  --color-accent: oklch(var(--accent));
+  --color-accent-foreground: oklch(var(--accent-foreground));
+  --color-destructive: oklch(var(--destructive));
+  --color-destructive-foreground: oklch(var(--destructive-foreground));
+  --color-border: oklch(var(--border));
+  --color-input: oklch(var(--input));
+  --color-ring: oklch(var(--ring));
 
   /* Font Families */
-  --font-sans: var(--font-geist-sans), "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-geist-mono), "JetBrains Mono", ui-monospace, monospace;
-  --font-serif: "Merriweather", "Georgia", serif;
+  --font-sans: var(--font-sans), "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-display), "Cormorant Garamond", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 :root {
-  --background: #FAFAF8;
-  --foreground: #1A1A1A;
+  --radius: 0.625rem;
+  /* Verbum light theme — Azul Escriba #1E3A5F based */
+  --background: 0.975 0.005 80;
+  --foreground: 0.165 0.015 250;
+  --card: 0.985 0.004 80;
+  --card-foreground: 0.165 0.015 250;
+  --popover: 0.985 0.004 80;
+  --popover-foreground: 0.165 0.015 250;
+  --primary: 0.325 0.065 250;
+  --primary-foreground: 0.985 0.004 80;
+  --secondary: 0.935 0.012 250;
+  --secondary-foreground: 0.325 0.065 250;
+  --muted: 0.945 0.012 250;
+  --muted-foreground: 0.515 0.02 250;
+  --accent: 0.935 0.012 250;
+  --accent-foreground: 0.325 0.065 250;
+  --destructive: 0.55 0.19 27;
+  --destructive-foreground: 0.985 0.004 80;
+  --border: 0.895 0.012 250;
+  --input: 0.895 0.012 250;
+  --ring: 0.325 0.065 250;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0F1419;
-    --foreground: #E8E6E1;
-  }
+.dark {
+  --background: 0.14 0.015 250;
+  --foreground: 0.925 0.01 80;
+  --card: 0.17 0.015 250;
+  --card-foreground: 0.925 0.01 80;
+  --popover: 0.17 0.015 250;
+  --popover-foreground: 0.925 0.01 80;
+  --primary: 0.45 0.065 250;
+  --primary-foreground: 0.985 0.004 80;
+  --secondary: 0.22 0.015 250;
+  --secondary-foreground: 0.925 0.01 80;
+  --muted: 0.22 0.015 250;
+  --muted-foreground: 0.585 0.02 250;
+  --accent: 0.22 0.015 250;
+  --accent-foreground: 0.925 0.01 80;
+  --destructive: 0.55 0.19 27;
+  --destructive-foreground: 0.985 0.004 80;
+  --border: 0.25 0.015 250;
+  --input: 0.25 0.015 250;
+  --ring: 0.45 0.065 250;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: oklch(var(--background));
+  color: oklch(var(--foreground));
   font-family: var(--font-sans);
 }

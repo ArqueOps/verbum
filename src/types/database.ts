@@ -7,13 +7,76 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
+      bible_books: {
+        Row: {
+          abbreviation: string
+          created_at: string
+          id: string
+          name: string
+          position: number
+          testament: string
+          total_chapters: number
+          updated_at: string
+        }
+        Insert: {
+          abbreviation: string
+          created_at?: string
+          id?: string
+          name: string
+          position: number
+          testament: string
+          total_chapters: number
+          updated_at?: string
+        }
+        Update: {
+          abbreviation?: string
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          testament?: string
+          total_chapters?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bible_chapters: {
+        Row: {
+          book_id: number
+          chapter_number: number
+          created_at: string
+          id: number
+          updated_at: string
+          verses_count: number
+        }
+        Insert: {
+          book_id: number
+          chapter_number: number
+          created_at?: string
+          id?: number
+          updated_at?: string
+          verses_count: number
+        }
+        Update: {
+          book_id?: number
+          chapter_number?: number
+          created_at?: string
+          id?: number
+          updated_at?: string
+          verses_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_chapters_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bible_verses: {
         Row: {
           book: string
@@ -46,6 +109,107 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      bible_versions: {
+        Row: {
+          abbr: string
+          created_at: string
+          description: string | null
+          id: number
+          is_original: boolean
+          language: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          abbr: string
+          created_at?: string
+          description?: string | null
+          id?: number
+          is_original?: boolean
+          language?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          abbr?: string
+          created_at?: string
+          description?: string | null
+          id?: number
+          is_original?: boolean
+          language?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      books: {
+        Row: {
+          abbr: string
+          chapters_count: number
+          created_at: string
+          id: number
+          name: string
+          position: number
+          testament: string
+          updated_at: string
+        }
+        Insert: {
+          abbr: string
+          chapters_count: number
+          created_at?: string
+          id?: number
+          name: string
+          position: number
+          testament: string
+          updated_at?: string
+        }
+        Update: {
+          abbr?: string
+          chapters_count?: number
+          created_at?: string
+          id?: number
+          name?: string
+          position?: number
+          testament?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chapters: {
+        Row: {
+          book_id: number
+          chapter_number: number
+          created_at: string
+          id: number
+          updated_at: string
+          verses_count: number
+        }
+        Insert: {
+          book_id: number
+          chapter_number: number
+          created_at?: string
+          id?: number
+          updated_at?: string
+          verses_count: number
+        }
+        Update: {
+          book_id?: number
+          chapter_number?: number
+          created_at?: string
+          id?: number
+          updated_at?: string
+          verses_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -95,80 +259,133 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
-          display_name: string
-          email: string | null
+          display_name: string | null
           id: string
+          preferred_version: number | null
+          role: Database["public"]["Enums"]["user_role"]
           study_count: number
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
-          display_name?: string
-          email?: string | null
+          display_name?: string | null
           id: string
+          preferred_version?: number | null
+          role?: Database["public"]["Enums"]["user_role"]
           study_count?: number
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
-          display_name?: string
-          email?: string | null
+          display_name?: string | null
           id?: string
+          preferred_version?: number | null
+          role?: Database["public"]["Enums"]["user_role"]
           study_count?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_preferred_version"
+            columns: ["preferred_version"]
+            isOneToOne: false
+            referencedRelation: "bible_versions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       studies: {
         Row: {
-          book: string | null
-          chapter: number | null
-          content: string | null
+          content: string
           created_at: string
           id: string
-          is_public: boolean
+          is_published: boolean
+          language: string
+          model_used: string
+          owner_id: string | null
+          published_at: string | null
+          slug: string
           title: string
           updated_at: string
-          user_id: string
-          verse_end: number | null
-          verse_start: number | null
+          verse_reference: string
         }
         Insert: {
-          book?: string | null
-          chapter?: number | null
-          content?: string | null
+          content: string
           created_at?: string
           id?: string
-          is_public?: boolean
+          is_published?: boolean
+          language?: string
+          model_used: string
+          owner_id?: string | null
+          published_at?: string | null
+          slug: string
           title: string
           updated_at?: string
-          user_id: string
-          verse_end?: number | null
-          verse_start?: number | null
+          verse_reference: string
         }
         Update: {
-          book?: string | null
-          chapter?: number | null
-          content?: string | null
+          content?: string
           created_at?: string
           id?: string
-          is_public?: boolean
+          is_published?: boolean
+          language?: string
+          model_used?: string
+          owner_id?: string | null
+          published_at?: string | null
+          slug?: string
           title?: string
           updated_at?: string
-          user_id?: string
-          verse_end?: number | null
-          verse_start?: number | null
+          verse_reference?: string
         }
         Relationships: [
           {
-            foreignKeyName: "studies_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "studies_owner_id_fkey"
+            columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -211,6 +428,83 @@ export type Database = {
           },
         ]
       }
+      study_history: {
+        Row: {
+          created_at: string
+          id: string
+          study_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          study_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          study_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_history_study_id_fkey"
+            columns: ["study_id"]
+            isOneToOne: false
+            referencedRelation: "studies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_sections: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          position: number
+          study_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          position: number
+          study_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          position?: number
+          study_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_sections_study_id_fkey"
+            columns: ["study_id"]
+            isOneToOne: false
+            referencedRelation: "studies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -244,7 +538,52 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_api_credentials: {
+        Row: {
+          created_at: string
+          encrypted_key: string
+          id: string
+          is_active: boolean
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_key: string
+          id?: string
+          is_active?: boolean
+          provider?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_key?: string
+          id?: string
+          is_active?: boolean
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_api_credentials_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -257,10 +596,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_subscription_status: {
+        Args: Record<string, never>
+        Returns: number
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "free" | "premium" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -268,25 +610,23 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -304,16 +644,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -329,16 +669,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -354,16 +694,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -371,22 +711,24 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["free", "premium", "admin"] as const,
+    },
   },
 } as const
