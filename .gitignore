@@ -5,6 +5,8 @@ dist/
 .env
 .env.local
 .env.production
+.env.*.local
 *.tsbuildinfo
+next-env.d.ts
 .vercel
 .DS_Store
