@@ -1,53 +1,65 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
-import { useSyncExternalStore } from "react";
 
-const ariaLabels = {
+const themeOrder = ["light", "dark", "system"] as const;
+type ThemeOption = (typeof themeOrder)[number];
+
+const ariaLabels: Record<ThemeOption, string> = {
   light: "Alternar para modo escuro",
   dark: "Alternar para modo sistema",
   system: "Alternar para modo claro",
-} as const;
+};
 
-const themeOrder = ["light", "dark", "system"] as const;
-
-const emptySubscribe = () => () => {};
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export function ThemeToggle() {
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const { theme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  );
+
+  const currentTheme = (theme as ThemeOption) ?? "system";
+
+  function handleToggle() {
+    const currentIndex = themeOrder.indexOf(currentTheme);
+    const nextIndex = (currentIndex + 1) % themeOrder.length;
+    const nextTheme = themeOrder[nextIndex] ?? "system";
+    setTheme(nextTheme);
+  }
 
   if (!mounted) {
     return (
       <button
-        className="h-9 w-9 rounded-md border border-neutral-200 dark:border-neutral-700 animate-pulse"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md"
+        aria-label="Carregando alternador de tema"
         disabled
-        aria-label="Carregando tema"
-      />
+      >
+        <span className="h-5 w-5 animate-pulse rounded-full bg-neutral-300 dark:bg-neutral-600" />
+      </button>
     );
   }
 
-  const currentIndex = themeOrder.indexOf(
-    theme as (typeof themeOrder)[number]
-  );
-  const nextTheme =
-    themeOrder[(currentIndex + 1) % themeOrder.length] ?? "system";
-  const label = ariaLabels[theme as keyof typeof ariaLabels] ?? ariaLabels.system;
-
-  const Icon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
+  const Icon = currentTheme === "light" ? Sun : currentTheme === "dark" ? Moon : Monitor;
 
   return (
     <button
-      onClick={() => setTheme(nextTheme)}
-      aria-label={label}
-      className="h-9 w-9 flex items-center justify-center rounded-md border border-neutral-200 transition-colors duration-200 hover:border-[#C8963E] hover:text-[#C8963E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A5F] dark:border-neutral-700 dark:hover:text-[#D4A843]"
+      onClick={handleToggle}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-md
+        text-neutral-600 transition-colors duration-200
+        hover:bg-[#C8963E]/10 hover:text-[#C8963E]
+        active:bg-[#B5862F]/20 active:text-[#B5862F]
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8963E]
+        dark:text-neutral-400 dark:hover:text-[#D4A843]"
+      aria-label={ariaLabels[currentTheme]}
+      type="button"
     >
-      <Icon className="h-5 w-5 transition-transform duration-200" strokeWidth={1.5} />
+      <Icon
+        className="h-5 w-5 transition-transform duration-200 ease-out"
+        strokeWidth={1.75}
+      />
     </button>
   );
 }
