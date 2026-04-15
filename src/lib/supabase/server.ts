@@ -1,19 +1,28 @@
-import { createServerClient as _createServerClient } from "@supabase/ssr";
-import type { GetAllCookies, SetAllCookies } from "@supabase/ssr";
-import { getSupabaseConfig } from "./env";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-interface CookieHandlers {
-  getAll: GetAllCookies;
-  setAll?: SetAllCookies;
-}
+export async function createClient() {
+  const cookieStore = await cookies();
 
-export function createServerClient(cookies: CookieHandlers) {
-  const { url, anonKey } = getSupabaseConfig();
-
-  return _createServerClient(url, anonKey, {
-    cookies: {
-      getAll: cookies.getAll,
-      setAll: cookies.setAll,
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // The `setAll` method is called from a Server Component.
+            // This can be ignored if middleware refreshes user sessions.
+          }
+        },
+      },
     },
-  });
+  );
 }
