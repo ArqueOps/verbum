@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get("error_description");
 
   if (error) {
-    const loginUrl = new URL("/auth/login", origin);
+    const loginUrl = new URL("/login", origin);
     loginUrl.searchParams.set("error", errorDescription ?? error);
     return NextResponse.redirect(loginUrl);
   }
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const loginUrl = new URL("/auth/login", origin);
+  const loginUrl = new URL("/login", origin);
   loginUrl.searchParams.set("error", "Não foi possível autenticar. Tente novamente.");
   return NextResponse.redirect(loginUrl);
 }

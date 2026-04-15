@@ -16,7 +16,7 @@ vi.mock("next/headers", () => ({
   cookies: mockCookies,
 }));
 
-import { createClient } from "../server";
+import { createServerSupabaseClient as createClient } from "../server";
 
 describe("createClient", () => {
   const originalEnv = process.env;
@@ -63,6 +63,18 @@ describe("createClient", () => {
         }),
       })
     );
+  });
+
+  it("should propagate env validation errors when url is missing", async () => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+    await expect(createClient()).rejects.toThrow();
+  });
+
+  it("should propagate env validation errors when anon key is missing", async () => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    await expect(createClient()).rejects.toThrow();
   });
 
   it("should wire getAll to the cookie store", async () => {
