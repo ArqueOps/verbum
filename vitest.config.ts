@@ -3,13 +3,13 @@ import path from "path";
 
 export default defineConfig({
   test: {
+    globals: true,
     environment: "node",
-    testTimeout: 30_000,
-    hookTimeout: 30_000,
+    include: ["src/**/*.test.ts"],
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "src"),
     },
   },
 });
