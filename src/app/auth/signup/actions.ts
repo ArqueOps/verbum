@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient as createClient } from "@/lib/supabase/server";
 
 const serverSignupSchema = z.object({
   fullName: z

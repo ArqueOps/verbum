@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient as createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export interface AuthResult {

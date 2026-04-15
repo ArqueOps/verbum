@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient as createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "./profile-form";
 
 export const metadata = {
