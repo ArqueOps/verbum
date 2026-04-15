@@ -1,6 +1,8 @@
 import { defineConfig } from "vitest/config";
 import path from "path";
 
+(process.env as Record<string, string>).NODE_ENV = "test";
+
 export default defineConfig({
   define: {
     "process.env.NODE_ENV": JSON.stringify("test"),

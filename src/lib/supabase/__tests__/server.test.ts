@@ -18,7 +18,7 @@ vi.mock("next/headers", () => ({
 
 import { createServerSupabaseClient as createClient } from "../server";
 
-describe("createClient", () => {
+describe("createClient (server)", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
