@@ -11,9 +11,9 @@ vi.mock("@supabase/ssr", () => ({
   createServerClient: mockCreateServerClient,
 }));
 
-import { createServerClient } from "../server";
+import { createClient } from "../server";
 
-describe("createServerClient", () => {
+describe("createClient", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -35,7 +35,7 @@ describe("createServerClient", () => {
     };
 
     // Act
-    const client = createServerClient(cookies);
+    const client = createClient(cookies);
 
     // Assert
     expect(client).toBeDefined();
@@ -50,7 +50,7 @@ describe("createServerClient", () => {
     const cookies = { getAll, setAll };
 
     // Act
-    createServerClient(cookies);
+    createClient(cookies);
 
     // Assert
     expect(mockCreateServerClient).toHaveBeenCalledOnce();
@@ -67,7 +67,7 @@ describe("createServerClient", () => {
     const cookies = { getAll };
 
     // Act
-    createServerClient(cookies);
+    createClient(cookies);
 
     // Assert
     expect(mockCreateServerClient).toHaveBeenCalledOnce();
@@ -85,7 +85,7 @@ describe("createServerClient", () => {
     };
 
     // Act & Assert
-    expect(() => createServerClient(cookies)).toThrow(
+    expect(() => createClient(cookies)).toThrow(
       "Missing environment variable: NEXT_PUBLIC_SUPABASE_URL"
     );
   });
@@ -98,7 +98,7 @@ describe("createServerClient", () => {
     };
 
     // Act & Assert
-    expect(() => createServerClient(cookies)).toThrow(
+    expect(() => createClient(cookies)).toThrow(
       "Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY"
     );
   });
