@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Verbum — Estudo Biblico com IA",
+  title: "Verbum — Profundidade que ilumina",
   description:
-    "Plataforma de estudo biblico contextualizado com inteligencia artificial.",
+    "Plataforma de estudo bíblico com inteligência artificial. Explore as Escrituras com profundidade teológica e clareza acessível.",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
