@@ -11,9 +11,9 @@
   --color-foreground: var(--foreground);
 
   /* Font Families */
-  --font-sans: var(--font-geist-sans), "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-geist-mono), "JetBrains Mono", ui-monospace, monospace;
-  --font-serif: "Merriweather", "Georgia", serif;
+  --font-sans: var(--font-sans), "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-display), "Cormorant Garamond", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 :root {
@@ -21,11 +21,9 @@
   --foreground: #1A1A1A;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0F1419;
-    --foreground: #E8E6E1;
-  }
+.dark {
+  --background: #0F1720;
+  --foreground: #E8E6E1;
 }
 
 body {
