@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { getSupabaseConfig } from "./env";
+
+const PUBLIC_ROUTES = ["/login", "/signup", "/auth/callback"];
 
 export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -11,10 +12,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const url = supabaseUrl;
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(url, anonKey, {
+  const supabase = createServerClient(supabaseUrl, anonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -31,7 +31,24 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+
+  // Redirect unauthenticated users to /login for protected routes
+  if (!user && !isPublicRoute) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Redirect authenticated users away from auth pages to home
+  if (user && (pathname === "/login" || pathname === "/signup")) {
+    const homeUrl = request.nextUrl.clone();
+    homeUrl.pathname = "/";
+    return NextResponse.redirect(homeUrl);
+  }
 
   return supabaseResponse;
 }
