@@ -4,8 +4,8 @@ interface FeatureRow {
   feature: string;
   gratuito: boolean;
   pacote10: boolean;
-  pacote50: boolean;
   mensal: boolean;
+  anual: boolean;
 }
 
 const features: FeatureRow[] = [
@@ -13,54 +13,54 @@ const features: FeatureRow[] = [
     feature: "Geração de estudos com IA",
     gratuito: true,
     pacote10: true,
-    pacote50: true,
     mensal: true,
+    anual: true,
   },
   {
     feature: "Salvar estudos gerados",
     gratuito: true,
     pacote10: true,
-    pacote50: true,
     mensal: true,
+    anual: true,
   },
   {
     feature: "Acesso ao blog público",
     gratuito: true,
     pacote10: true,
-    pacote50: true,
     mensal: true,
+    anual: true,
   },
   {
     feature: "Publicar estudos no blog",
     gratuito: false,
     pacote10: true,
-    pacote50: true,
     mensal: true,
+    anual: true,
   },
   {
     feature: "Exportação em PDF",
     gratuito: false,
     pacote10: true,
-    pacote50: true,
     mensal: true,
+    anual: true,
   },
   {
     feature: "Créditos ilimitados",
     gratuito: false,
     pacote10: false,
-    pacote50: false,
     mensal: true,
+    anual: true,
   },
   {
     feature: "Suporte prioritário",
     gratuito: false,
     pacote10: false,
-    pacote50: false,
     mensal: true,
+    anual: true,
   },
 ];
 
-const planNames = ["Gratuito", "10 Créditos", "50 Créditos", "Mensal"];
+const planNames = ["Gratuito", "10 Créditos", "Mensal", "Anual"];
 
 function FeatureIcon({ included }: { included: boolean }) {
   return included ? (
@@ -113,10 +113,10 @@ export function FeatureComparison() {
                   <FeatureIcon included={row.pacote10} />
                 </td>
                 <td className="px-4 py-3">
-                  <FeatureIcon included={row.pacote50} />
+                  <FeatureIcon included={row.mensal} />
                 </td>
                 <td className="px-4 py-3">
-                  <FeatureIcon included={row.mensal} />
+                  <FeatureIcon included={row.anual} />
                 </td>
               </tr>
             ))}
