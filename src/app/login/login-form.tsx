@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn, type SignInState } from "./actions";
 import { createBrowserClient } from "@/lib/supabase/browser";
@@ -61,16 +62,21 @@ const oauthProviders = [
 ];
 
 export default function LoginForm() {
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
   const [state, formAction, pending] = useActionState(signIn, initialState);
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   async function handleOAuthLogin(provider: "google" | "apple" | "github") {
     setLoadingProvider(provider);
     const supabase = createBrowserClient();
+    const callbackUrl = redirectParam
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectParam)}`
+      : `${window.location.origin}/auth/callback`;
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl,
       },
     });
   }
@@ -105,6 +111,7 @@ export default function LoginForm() {
 
       {/* Email/Password Form */}
       <form action={formAction} className="space-y-5">
+        {redirectParam && <input type="hidden" name="redirect" value={redirectParam} />}
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-foreground/80">
             E-mail
