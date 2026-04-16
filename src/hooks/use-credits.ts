@@ -4,16 +4,14 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import type { Database } from "@/types/database";
 
-const FREE_CREDIT_LIMIT = 3;
-
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type UserRole = Database["public"]["Enums"]["user_role"];
 
-function computeCredits(studyCount: number, role: UserRole): number {
+function computeCredits(creditsRemaining: number, role: UserRole): number {
   if (role === "premium" || role === "admin") {
     return Infinity;
   }
-  return Math.max(0, FREE_CREDIT_LIMIT - studyCount);
+  return Math.max(0, creditsRemaining);
 }
 
 interface CreditsState {
@@ -76,14 +74,14 @@ export function useCredits(): UseCreditsReturn {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("study_count, role")
+      .select("credits_remaining, role")
       .eq("id", user.id)
       .single();
 
     if (profile) {
       dispatch({
         type: "LOADED",
-        credits: computeCredits(profile.study_count, profile.role),
+        credits: computeCredits(profile.credits_remaining, profile.role),
       });
     } else {
       dispatch({ type: "UNAUTHENTICATED" });
@@ -99,7 +97,7 @@ export function useCredits(): UseCreditsReturn {
 
     const channel = supabase
       .channel("credits-sync")
-      .on<Pick<Profile, "study_count" | "role">>(
+      .on<Pick<Profile, "credits_remaining" | "role">>(
         "postgres_changes",
         {
           event: "UPDATE",
@@ -111,10 +109,10 @@ export function useCredits(): UseCreditsReturn {
             userIdRef.current &&
             (payload.new as Profile).id === userIdRef.current
           ) {
-            const updated = payload.new as Pick<Profile, "study_count" | "role">;
+            const updated = payload.new as Pick<Profile, "credits_remaining" | "role">;
             dispatch({
               type: "LOADED",
-              credits: computeCredits(updated.study_count, updated.role),
+              credits: computeCredits(updated.credits_remaining, updated.role),
             });
           }
         }
