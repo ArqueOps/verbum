@@ -55,10 +55,11 @@ export function StudyCard({
   return (
     <Link
       href={href}
+      data-testid="study-card"
       className="group relative flex flex-col gap-2 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/30 hover:bg-accent/50"
     >
       <div className="flex items-start justify-between">
-        <span className="text-xs font-medium text-primary/70">{passage}</span>
+        <span data-testid="study-card-passage" className="text-xs font-medium text-primary/70">{passage}</span>
         <button
           type="button"
           aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
@@ -80,7 +81,7 @@ export function StudyCard({
         </button>
       </div>
 
-      <h3 className="line-clamp-2 text-sm font-semibold text-card-foreground group-hover:text-primary">
+      <h3 data-testid="study-card-title" className="line-clamp-2 text-sm font-semibold text-card-foreground group-hover:text-primary">
         {title}
       </h3>
 
