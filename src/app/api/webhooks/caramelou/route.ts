@@ -6,20 +6,33 @@ import { verifyWebhookApiKeyHash } from "@/lib/webhook-auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type WebhookData = {
-  user_id?: string;
-  plan_id?: string;
-  status?: string;
+type CaramelouCustomer = {
+  email?: string;
+  name?: string;
+};
+
+type CaramelouPayload = {
+  event: string;
+  subscription_id?: string;
+  customer?: CaramelouCustomer;
+  frequency_type?: string;
+  next_charge_at?: string;
   current_period_start?: string;
-  current_period_end?: string;
+  created_at?: string;
+};
+
+type SubscriptionUpdate = {
+  status?: "active" | "past_due" | "canceled" | "expired";
+  plan_id?: string;
+  current_period_start?: string;
+  current_period_end?: string | null;
   caramelou_subscription_id?: string;
 };
 
-type WebhookPayload = {
-  event_id: string;
-  event_type: string;
-  data: WebhookData;
-};
+const RECURRING_EVENTS = new Set([
+  "subscription_charge_succeeded",
+  "subscription_charge_failed",
+]);
 
 export async function POST(request: NextRequest) {
   const apiKeyHash = request.headers.get("x-api-key-hash");
@@ -28,39 +41,45 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: WebhookPayload;
+  let payload: CaramelouPayload;
   try {
-    body = (await request.json()) as WebhookPayload;
+    payload = (await request.json()) as CaramelouPayload;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { event_id, event_type, data } = body;
-
-  if (!event_id || !event_type || !data) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  if (!payload.event) {
+    return NextResponse.json({ error: "Missing event" }, { status: 400 });
   }
 
-  const supabase = createAdminClient();
-
   try {
+    const supabase = createAdminClient();
+
+    const eventId = buildEventId(payload);
+    if (!eventId) {
+      console.warn("[caramelou-webhook] cannot derive event_id, skipping");
+      return NextResponse.json({ received: true });
+    }
+
     const { data: existing } = await supabase
       .from("webhook_events")
       .select("id")
-      .eq("event_id", event_id)
+      .eq("event_id", eventId)
       .maybeSingle();
 
     if (existing) {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
-    await handleEvent(supabase, event_type, data);
+    const userId = await resolveUserIdFromEmail(supabase, payload.customer?.email);
+
+    await handleEvent(supabase, payload, userId);
 
     await supabase.from("webhook_events").insert({
-      event_id,
-      event_type,
-      user_id: data.user_id ?? null,
-      payload: body as unknown as Record<string, unknown>,
+      event_id: eventId,
+      event_type: payload.event,
+      user_id: userId,
+      payload: payload as unknown as Record<string, unknown>,
     });
 
     return NextResponse.json({ received: true });
@@ -70,97 +89,179 @@ export async function POST(request: NextRequest) {
   }
 }
 
+function buildEventId(payload: CaramelouPayload): string | null {
+  if (!payload.subscription_id) return null;
+
+  const base = `${payload.subscription_id}_${payload.event}`;
+
+  if (RECURRING_EVENTS.has(payload.event)) {
+    const cycleKey =
+      payload.next_charge_at ??
+      payload.current_period_start ??
+      payload.created_at;
+    if (cycleKey) return `${base}_${cycleKey}`;
+  }
+
+  return base;
+}
+
+async function resolveUserIdFromEmail(
+  supabase: SupabaseClient,
+  email: string | undefined,
+): Promise<string | null> {
+  if (!email) return null;
+
+  const { data, error } = await supabase
+    .schema("auth" as never)
+    .from("users")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle<{ id: string }>();
+
+  if (error) {
+    console.warn(
+      `[caramelou-webhook] failed to lookup user by email ${email}: ${error.message}`,
+    );
+    return null;
+  }
+
+  return data?.id ?? null;
+}
+
 async function handleEvent(
   supabase: SupabaseClient,
-  eventType: string,
-  data: WebhookData,
+  payload: CaramelouPayload,
+  userId: string | null,
 ): Promise<void> {
-  const userId = data.user_id;
+  const { event } = payload;
 
-  switch (eventType) {
+  if (event === "sale_success_credit") {
+    console.log("[caramelou-webhook] sale_success_credit not applicable for Verbum");
+    return;
+  }
+
+  if (!userId) {
+    console.warn(
+      `[caramelou-webhook] no user found for email ${payload.customer?.email ?? "unknown"}, event=${event}`,
+    );
+    return;
+  }
+
+  switch (event) {
     case "subscription_created": {
-      if (!userId) return;
-      await supabase.from("subscriptions").insert({
-        user_id: userId,
-        plan_id: data.plan_id ?? "monthly",
-        status: data.status ?? "active",
-        current_period_start: data.current_period_start ?? new Date().toISOString(),
-        current_period_end: data.current_period_end ?? null,
-        caramelou_subscription_id: data.caramelou_subscription_id ?? null,
+      await upsertSubscription(supabase, userId, {
+        status: "active",
+        plan_id: payload.frequency_type ?? "monthly",
+        current_period_start: payload.current_period_start ?? new Date().toISOString(),
+        current_period_end: payload.next_charge_at ?? null,
+        caramelou_subscription_id: payload.subscription_id,
       });
       return;
     }
 
     case "subscription_charge_succeeded": {
-      if (!userId) return;
-      await supabase
-        .from("subscriptions")
-        .update({
-          status: "active",
-          current_period_end: data.current_period_end ?? null,
-        })
-        .eq("user_id", userId);
+      await updateSubscription(supabase, userId, payload.subscription_id, {
+        status: "active",
+        current_period_end: payload.next_charge_at ?? null,
+      });
       return;
     }
 
     case "subscription_charge_failed": {
-      if (!userId) return;
-      await supabase
-        .from("subscriptions")
-        .update({ status: "past_due" })
-        .eq("user_id", userId);
+      await updateSubscription(supabase, userId, payload.subscription_id, {
+        status: "past_due",
+      });
       return;
     }
 
     case "subscription_cancellation_scheduled": {
       console.log(
-        `[caramelou-webhook] cancellation scheduled for user ${userId ?? "unknown"}`,
+        `[caramelou-webhook] cancellation scheduled for user ${userId}, subscription ${payload.subscription_id ?? "unknown"}`,
       );
       return;
     }
 
     case "subscription_canceled": {
-      if (!userId) return;
-      await supabase
-        .from("subscriptions")
-        .update({ status: "canceled" })
-        .eq("user_id", userId);
+      await updateSubscription(supabase, userId, payload.subscription_id, {
+        status: "canceled",
+      });
       return;
     }
 
     case "subscription_completed": {
-      if (!userId) return;
-      await supabase
-        .from("subscriptions")
-        .update({ status: "expired" })
-        .eq("user_id", userId);
+      await updateSubscription(supabase, userId, payload.subscription_id, {
+        status: "expired",
+      });
       return;
     }
 
     case "subscription_upgraded":
     case "subscription_downgraded": {
-      if (!userId) return;
-      const update: Record<string, unknown> = {};
-      if (data.plan_id) update.plan_id = data.plan_id;
-      if (data.current_period_end) {
-        update.current_period_end = data.current_period_end;
-      }
+      const update: SubscriptionUpdate = {};
+      if (payload.frequency_type) update.plan_id = payload.frequency_type;
+      if (payload.next_charge_at) update.current_period_end = payload.next_charge_at;
       if (Object.keys(update).length === 0) return;
-      await supabase
-        .from("subscriptions")
-        .update(update)
-        .eq("user_id", userId);
-      return;
-    }
-
-    case "sale_success_credit": {
-      console.log("[caramelou-webhook] sale_success_credit not applicable for Verbum");
+      await updateSubscription(supabase, userId, payload.subscription_id, update);
       return;
     }
 
     default: {
-      console.log(`[caramelou-webhook] unhandled event_type: ${eventType}`);
+      console.log(`[caramelou-webhook] unhandled event: ${event}`);
       return;
     }
+  }
+}
+
+async function upsertSubscription(
+  supabase: SupabaseClient,
+  userId: string,
+  update: SubscriptionUpdate,
+): Promise<void> {
+  const { data: existing } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("subscriptions")
+      .update(update)
+      .eq("user_id", userId);
+    if (error) {
+      console.error(
+        `[caramelou-webhook] failed to update subscription for user ${userId}: ${error.message}`,
+      );
+    }
+    return;
+  }
+
+  const { error } = await supabase
+    .from("subscriptions")
+    .insert({ user_id: userId, ...update });
+  if (error) {
+    console.error(
+      `[caramelou-webhook] failed to insert subscription for user ${userId}: ${error.message}`,
+    );
+  }
+}
+
+async function updateSubscription(
+  supabase: SupabaseClient,
+  userId: string,
+  caramelouSubscriptionId: string | undefined,
+  update: SubscriptionUpdate,
+): Promise<void> {
+  let query = supabase.from("subscriptions").update(update).eq("user_id", userId);
+
+  if (caramelouSubscriptionId) {
+    query = query.eq("caramelou_subscription_id", caramelouSubscriptionId);
+  }
+
+  const { error } = await query;
+  if (error) {
+    console.error(
+      `[caramelou-webhook] failed to update subscription for user ${userId}: ${error.message}`,
+    );
   }
 }
