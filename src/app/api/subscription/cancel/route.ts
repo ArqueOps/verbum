@@ -53,6 +53,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!subscription.caramelou_subscription_id) {
+    return Response.json(
+      { error: "Assinatura sem vínculo com o sistema de pagamento." },
+      { status: 422 },
+    );
+  }
+
   const caramelouApiUrl = process.env.CARAMELOU_API_URL;
   if (!caramelouApiUrl) {
     return Response.json(
