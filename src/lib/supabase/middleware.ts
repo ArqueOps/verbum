@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_ROUTES = ["/login", "/signup", "/auth/callback", "/auth/forgot-password", "/auth/reset-password", "/blog"];
+const PUBLIC_ROUTES = ["/login", "/signup", "/auth/callback", "/auth/forgot-password", "/auth/reset-password", "/blog", "/estudos"];
 
 export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

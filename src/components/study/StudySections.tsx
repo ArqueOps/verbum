@@ -11,9 +11,10 @@ interface Section {
 
 interface StudySectionsProps {
   sections: Section[];
+  defaultAllOpen?: boolean;
 }
 
-export function StudySections({ sections }: StudySectionsProps) {
+export function StudySections({ sections, defaultAllOpen }: StudySectionsProps) {
   const sorted = [...sections].sort((a, b) => a.position - b.position);
 
   return (
@@ -23,7 +24,7 @@ export function StudySections({ sections }: StudySectionsProps) {
           key={section.id}
           title={section.title}
           content={section.content}
-          defaultOpen={index === 0}
+          defaultOpen={defaultAllOpen || index === 0}
         />
       ))}
     </div>
