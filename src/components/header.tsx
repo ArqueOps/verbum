@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CreditsBadge } from "@/components/layout/CreditsBadge";
 
 interface NavLink {
   href: string;
@@ -71,11 +72,13 @@ export function Header() {
               {link.label}
             </Link>
           ))}
+          <CreditsBadge />
           <ThemeToggle />
         </nav>
 
         {/* Mobile controls */}
         <div className="flex items-center gap-2 md:hidden">
+          <CreditsBadge />
           <ThemeToggle />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}

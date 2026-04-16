@@ -113,7 +113,7 @@ Return ONLY the JSON array. No markdown code fences, no extra text.`;
 
 export { SYSTEM_PROMPT };
 
-function buildUserPrompt(params: GenerateStudyParams): string {
+export function buildUserPrompt(params: GenerateStudyParams): string {
   const { book, chapter, verseStart, verseEnd, passageText, versionId } =
     params;
 

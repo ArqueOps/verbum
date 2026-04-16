@@ -302,6 +302,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          credits_remaining: number
           display_name: string | null
           id: string
           preferred_version: number | null
@@ -312,6 +313,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          credits_remaining?: number
           display_name?: string | null
           id: string
           preferred_version?: number | null
@@ -322,6 +324,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          credits_remaining?: number
           display_name?: string | null
           id?: string
           preferred_version?: number | null
@@ -471,29 +474,29 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          display_order: number
           id: string
-          position: number
+          section_type: Database["public"]["Enums"]["section_type"]
           study_id: string
           title: string
-          updated_at: string
         }
         Insert: {
           content: string
           created_at?: string
+          display_order: number
           id?: string
-          position: number
+          section_type: Database["public"]["Enums"]["section_type"]
           study_id: string
           title: string
-          updated_at?: string
         }
         Update: {
           content?: string
           created_at?: string
+          display_order?: number
           id?: string
-          position?: number
+          section_type?: Database["public"]["Enums"]["section_type"]
           study_id?: string
           title?: string
-          updated_at?: string
         }
         Relationships: [
           {
@@ -596,12 +599,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_credits_on_study: {
+        Args: Record<string, never>
+        Returns: undefined
+      }
       update_subscription_status: {
         Args: Record<string, never>
         Returns: number
       }
     }
     Enums: {
+      section_type:
+        | "context"
+        | "key_words"
+        | "cross_references"
+        | "theological_analysis"
+        | "historical_context"
+        | "practical_application"
+        | "reflection_questions"
       user_role: "free" | "premium" | "admin"
     }
     CompositeTypes: {
@@ -728,6 +743,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      section_type: [
+        "context",
+        "key_words",
+        "cross_references",
+        "theological_analysis",
+        "historical_context",
+        "practical_application",
+        "reflection_questions",
+      ] as const,
       user_role: ["free", "premium", "admin"] as const,
     },
   },
