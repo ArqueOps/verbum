@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import type { SignInState } from "../actions";
 
+const mockSearchParamsGet = vi.hoisted(() => vi.fn().mockReturnValue(null));
+
 vi.mock("next/link", () => ({
   default: ({
     children,
@@ -17,6 +19,10 @@ vi.mock("next/link", () => ({
       {children}
     </a>
   ),
+}));
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => ({ get: mockSearchParamsGet }),
 }));
 
 let mockState: SignInState = {};
@@ -43,6 +49,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockState = {};
   mockPending = false;
+  mockSearchParamsGet.mockReturnValue(null);
 });
 
 async function renderLoginForm() {
@@ -156,5 +163,28 @@ describe("LoginForm", () => {
 
     expect(screen.getByText("E-mail ou senha inválidos")).toBeInTheDocument();
     expect(screen.getByText("Formato de e-mail inválido")).toBeInTheDocument();
+  });
+
+  it("includes hidden redirect field when redirect search param is present", async () => {
+    mockSearchParamsGet.mockImplementation((key: string) =>
+      key === "redirect" ? "/estudos/abc" : null,
+    );
+
+    await renderLoginForm();
+
+    const hiddenInput = document.querySelector(
+      'input[type="hidden"][name="redirect"]',
+    ) as HTMLInputElement;
+    expect(hiddenInput).toBeInTheDocument();
+    expect(hiddenInput.value).toBe("/estudos/abc");
+  });
+
+  it("does not include hidden redirect field when no redirect param", async () => {
+    await renderLoginForm();
+
+    const hiddenInput = document.querySelector(
+      'input[type="hidden"][name="redirect"]',
+    );
+    expect(hiddenInput).toBeNull();
   });
 });

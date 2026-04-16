@@ -14,6 +14,19 @@ const signInSchema = z.object({
     .min(1, "A senha é obrigatória"),
 });
 
+export function isValidRedirectPath(path: string): boolean {
+  if (!path.startsWith("/")) return false;
+  if (path.startsWith("//")) return false;
+  if (path.includes("\\")) return false;
+  try {
+    const url = new URL(path, "http://localhost");
+    if (url.hostname !== "localhost") return false;
+  } catch {
+    return false;
+  }
+  return true;
+}
+
 export type SignInState = {
   error?: string;
   fieldErrors?: {
@@ -54,5 +67,11 @@ export async function signIn(
     return { error: "E-mail ou senha inválidos" };
   }
 
-  redirect("/dashboard");
+  const redirectParam = formData.get("redirect");
+  const redirectTo =
+    typeof redirectParam === "string" && isValidRedirectPath(redirectParam)
+      ? redirectParam
+      : "/dashboard";
+
+  redirect(redirectTo);
 }

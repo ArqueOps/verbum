@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn, type SignInState } from "./actions";
 import { createBrowserClient } from "@/lib/supabase/browser";
@@ -63,6 +64,8 @@ const oauthProviders = [
 export default function LoginForm() {
   const [state, formAction, pending] = useActionState(signIn, initialState);
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
 
   async function handleOAuthLogin(provider: "google" | "apple" | "github") {
     setLoadingProvider(provider);
@@ -105,6 +108,9 @@ export default function LoginForm() {
 
       {/* Email/Password Form */}
       <form action={formAction} className="space-y-5">
+        {redirectParam && (
+          <input type="hidden" name="redirect" value={redirectParam} />
+        )}
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-foreground/80">
             E-mail
