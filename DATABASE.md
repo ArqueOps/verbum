@@ -33,3 +33,4 @@
 | Migration | Description |
 |-----------|-------------|
 | 00002_triggers_and_functions.sql | Trigger functions and triggers for profiles, studies, subscriptions |
+| 20260416160000_create_webhook_events.sql | Creates `webhook_events` table for idempotent payment webhook logging (Stripe via Caramelou). UNIQUE `stripe_event_id`, partial index on unprocessed events, RLS enabled (service-role only). |
