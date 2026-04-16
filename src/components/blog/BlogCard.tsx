@@ -6,6 +6,8 @@ interface BlogCardProps {
   publishedAt: string | null;
   bookName: string | null;
   slug: string;
+  summary: string | null;
+  authorName: string | null;
 }
 
 function formatDatePtBr(iso: string): string {
@@ -22,6 +24,8 @@ export function BlogCard({
   publishedAt,
   bookName,
   slug,
+  summary,
+  authorName,
 }: BlogCardProps) {
   const formattedDate = publishedAt ? formatDatePtBr(publishedAt) : null;
 
@@ -39,6 +43,12 @@ export function BlogCard({
         {title}
       </h3>
 
+      {summary && (
+        <p className="line-clamp-2 text-sm text-muted-foreground">
+          {summary.length > 120 ? summary.slice(0, 120) + "\u2026" : summary}
+        </p>
+      )}
+
       <div className="mt-auto flex items-center justify-between pt-2">
         {formattedDate && (
           <time
@@ -48,8 +58,10 @@ export function BlogCard({
             {formattedDate}
           </time>
         )}
-        {bookName && (
-          <span className="text-xs text-muted-foreground">{bookName}</span>
+        {(authorName || bookName) && (
+          <span className="text-xs text-muted-foreground">
+            {[authorName, bookName].filter(Boolean).join(" \u00b7 ")}
+          </span>
         )}
       </div>
     </Link>
