@@ -42,74 +42,6 @@ export type Database = {
         }
         Relationships: []
       }
-      bible_chapters: {
-        Row: {
-          book_id: number
-          chapter_number: number
-          created_at: string
-          id: number
-          updated_at: string
-          verses_count: number
-        }
-        Insert: {
-          book_id: number
-          chapter_number: number
-          created_at?: string
-          id?: number
-          updated_at?: string
-          verses_count: number
-        }
-        Update: {
-          book_id?: number
-          chapter_number?: number
-          created_at?: string
-          id?: number
-          updated_at?: string
-          verses_count?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bible_chapters_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bible_verses: {
-        Row: {
-          book: string
-          chapter: number
-          created_at: string
-          id: number
-          text: string
-          updated_at: string
-          verse_number: number
-          version: string
-        }
-        Insert: {
-          book: string
-          chapter: number
-          created_at?: string
-          id?: number
-          text: string
-          updated_at?: string
-          verse_number: number
-          version?: string
-        }
-        Update: {
-          book?: string
-          chapter?: number
-          created_at?: string
-          id?: number
-          text?: string
-          updated_at?: string
-          verse_number?: number
-          version?: string
-        }
-        Relationships: []
-      }
       bible_versions: {
         Row: {
           abbr: string
@@ -211,93 +143,6 @@ export type Database = {
           },
         ]
       }
-      payments: {
-        Row: {
-          amount: number
-          created_at: string
-          currency: string
-          id: string
-          status: string
-          subscription_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          currency?: string
-          id?: string
-          status?: string
-          subscription_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          currency?: string
-          id?: string
-          status?: string
-          subscription_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payments_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "subscriptions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      plans: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          description: string | null
-          features: Json | null
-          id: string
-          is_active: boolean
-          name: string
-          price: number
-          slug: string
-          updated_at: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          is_active?: boolean
-          name: string
-          price: number
-          slug: string
-          updated_at?: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          price?: number
-          slug?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -307,7 +152,6 @@ export type Database = {
           id: string
           preferred_version: number | null
           role: Database["public"]["Enums"]["user_role"]
-          study_count: number
           updated_at: string
         }
         Insert: {
@@ -318,7 +162,6 @@ export type Database = {
           id: string
           preferred_version?: number | null
           role?: Database["public"]["Enums"]["user_role"]
-          study_count?: number
           updated_at?: string
         }
         Update: {
@@ -329,7 +172,6 @@ export type Database = {
           id?: string
           preferred_version?: number | null
           role?: Database["public"]["Enums"]["user_role"]
-          study_count?: number
           updated_at?: string
         }
         Relationships: [
@@ -344,8 +186,11 @@ export type Database = {
       }
       studies: {
         Row: {
-          content: string
+          book_id: number | null
+          chapter: number | null
+          content: Json
           created_at: string
+          generation_time_ms: number | null
           id: string
           is_published: boolean
           language: string
@@ -355,11 +200,17 @@ export type Database = {
           slug: string
           title: string
           updated_at: string
+          verse_end: number | null
           verse_reference: string
+          verse_start: number | null
+          version_id: number | null
         }
         Insert: {
-          content: string
+          book_id?: number | null
+          chapter?: number | null
+          content: Json
           created_at?: string
+          generation_time_ms?: number | null
           id?: string
           is_published?: boolean
           language?: string
@@ -369,11 +220,17 @@ export type Database = {
           slug: string
           title: string
           updated_at?: string
+          verse_end?: number | null
           verse_reference: string
+          verse_start?: number | null
+          version_id?: number | null
         }
         Update: {
-          content?: string
+          book_id?: number | null
+          chapter?: number | null
+          content?: Json
           created_at?: string
+          generation_time_ms?: number | null
           id?: string
           is_published?: boolean
           language?: string
@@ -383,7 +240,10 @@ export type Database = {
           slug?: string
           title?: string
           updated_at?: string
+          verse_end?: number | null
           verse_reference?: string
+          verse_start?: number | null
+          version_id?: number | null
         }
         Relationships: [
           {
@@ -393,108 +253,47 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      study_bookmarks: {
-        Row: {
-          created_at: string
-          id: string
-          study_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          study_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          study_id?: string
-          user_id?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "study_bookmarks_study_id_fkey"
-            columns: ["study_id"]
+            foreignKeyName: "studies_book_id_fkey"
+            columns: ["book_id"]
             isOneToOne: false
-            referencedRelation: "studies"
+            referencedRelation: "books"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "study_bookmarks_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "studies_version_id_fkey"
+            columns: ["version_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      study_history: {
-        Row: {
-          created_at: string
-          id: string
-          study_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          study_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          study_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "study_history_study_id_fkey"
-            columns: ["study_id"]
-            isOneToOne: false
-            referencedRelation: "studies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "bible_versions"
             referencedColumns: ["id"]
           },
         ]
       }
       study_sections: {
         Row: {
-          content: string
+          content: Json
           created_at: string
-          display_order: number
           id: string
-          section_type: Database["public"]["Enums"]["section_type"]
+          order_index: number
+          section_type: string
           study_id: string
           title: string
         }
         Insert: {
-          content: string
+          content: Json
           created_at?: string
-          display_order: number
           id?: string
-          section_type: Database["public"]["Enums"]["section_type"]
+          order_index: number
+          section_type: string
           study_id: string
           title: string
         }
         Update: {
-          content?: string
+          content?: Json
           created_at?: string
-          display_order?: number
           id?: string
-          section_type?: Database["public"]["Enums"]["section_type"]
+          order_index?: number
+          section_type?: string
           study_id?: string
           title?: string
         }
@@ -504,54 +303,6 @@ export type Database = {
             columns: ["study_id"]
             isOneToOne: false
             referencedRelation: "studies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      subscriptions: {
-        Row: {
-          created_at: string
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          plan_id: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          plan_id?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          plan_id?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -594,29 +345,79 @@ export type Database = {
           },
         ]
       }
+      user_credits: {
+        Row: {
+          created_at: string
+          credits_remaining: number
+          credits_used: number
+          has_active_subscription: boolean
+          id: string
+          subscription_end: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_remaining?: number
+          credits_used?: number
+          has_active_subscription?: boolean
+          id?: string
+          subscription_end?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_remaining?: number
+          credits_used?: number
+          has_active_subscription?: boolean
+          id?: string
+          subscription_end?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      decrement_credits_on_study: {
-        Args: Record<string, never>
-        Returns: undefined
+      check_user_credits: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json
       }
-      update_subscription_status: {
-        Args: Record<string, never>
-        Returns: number
+      consume_credit_and_save_study: {
+        Args: {
+          p_user_id: string
+          p_slug: string
+          p_title: string
+          p_verse_reference: string
+          p_content: Json
+          p_model_used: string
+          p_book_id?: number
+          p_chapter?: number
+          p_verse_start?: number
+          p_verse_end?: number
+          p_version_id?: number
+          p_generation_time_ms?: number
+          p_language?: string
+          p_sections?: Json
+        }
+        Returns: Json
       }
     }
     Enums: {
-      section_type:
-        | "context"
-        | "key_words"
-        | "cross_references"
-        | "theological_analysis"
-        | "historical_context"
-        | "practical_application"
-        | "reflection_questions"
       user_role: "free" | "premium" | "admin"
     }
     CompositeTypes: {
@@ -743,15 +544,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      section_type: [
-        "context",
-        "key_words",
-        "cross_references",
-        "theological_analysis",
-        "historical_context",
-        "practical_application",
-        "reflection_questions",
-      ] as const,
       user_role: ["free", "premium", "admin"] as const,
     },
   },

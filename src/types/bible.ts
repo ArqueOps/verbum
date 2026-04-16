@@ -1,9 +1,3 @@
-import type { Tables } from "./database";
-
-// --- Database-derived row types ---
-
-export type BibleVerseRow = Tables<"bible_verses">;
-
 // --- Domain enums & literals ---
 
 export type Testament = "old" | "new";
