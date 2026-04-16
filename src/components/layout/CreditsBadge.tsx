@@ -44,7 +44,7 @@ export function CreditsBadge() {
       ref={badgeRef}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.02em] transition-colors",
-        badgeColor(creditsRemaining, isUnlimited),
+        badgeColor(creditsRemaining ?? 0, isUnlimited),
       )}
       title={`Créditos restantes: ${isUnlimited ? "ilimitados" : creditsRemaining}`}
     >
