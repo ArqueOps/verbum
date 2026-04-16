@@ -3,14 +3,14 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { fetchBiblePassage } from "@/lib/bible-api";
 import {
-  streamStudyGeneration,
-  generateStudyNonStreaming,
-  validateStudyJson,
-  type GeneratedStudy,
+  generateStudyStream,
+  parseStudyResponse,
+  type StudySection,
+  type GenerateStudyParams,
 } from "@/lib/openai";
 
 const TOTAL_TIMEOUT_MS = 60_000;
-const MODEL_USED = "gpt-4o";
+const MODEL_USED = "gpt-5.4";
 
 const requestSchema = z.object({
   book_id: z.string().min(1),
@@ -126,6 +126,15 @@ export async function POST(request: NextRequest) {
     TOTAL_TIMEOUT_MS,
   );
 
+  const generateParams: GenerateStudyParams = {
+    book: book_id,
+    chapter,
+    verseStart: verse_start,
+    verseEnd: verse_end,
+    passageText,
+    versionId: version_id,
+  };
+
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
@@ -141,48 +150,40 @@ export async function POST(request: NextRequest) {
       try {
         // Stream from OpenAI
         let fullResponse = "";
-        const streamIterable = await streamStudyGeneration(
-          verseReference,
-          passageText,
-          totalAbort.signal,
-        );
 
-        for await (const chunk of streamIterable) {
-          const content = chunk.choices?.[0]?.delta?.content;
-          if (content) {
-            fullResponse += content;
-            sendEvent(content);
-          }
+        for await (const chunk of generateStudyStream(generateParams)) {
+          if (totalAbort.signal.aborted) break;
+          fullResponse += chunk;
+          sendEvent(chunk);
         }
 
-        // 7. Validate JSON
-        let study: GeneratedStudy | null = validateStudyJson(fullResponse);
-
-        if (!study) {
-          // Retry 1x non-streaming
+        // 7. Validate JSON using Zod-based parser
+        let sections: StudySection[];
+        try {
+          sections = parseStudyResponse(fullResponse);
+        } catch {
+          // Retry 1x
           try {
-            const retryResponse = await generateStudyNonStreaming(
-              verseReference,
-              passageText,
-              totalAbort.signal,
-            );
-            study = validateStudyJson(retryResponse);
+            let retryResponse = "";
+            for await (const chunk of generateStudyStream(generateParams)) {
+              if (totalAbort.signal.aborted) break;
+              retryResponse += chunk;
+            }
+            sections = parseStudyResponse(retryResponse);
+            fullResponse = retryResponse;
           } catch {
-            // Retry also failed
-          }
-
-          if (!study) {
             sendEvent("Erro ao gerar estudo. Tente novamente.", "error");
             return;
           }
         }
 
         // 8. Save study to DB
-        const slug = generateSlug(study.title);
+        const studyTitle = `Estudo: ${verseReference}`;
+        const slug = generateSlug(studyTitle);
         const { data: savedStudy, error: insertError } = await supabase
           .from("studies")
           .insert({
-            title: study.title,
+            title: studyTitle,
             content: fullResponse,
             verse_reference: verseReference,
             slug: `${slug}-${Date.now()}`,
@@ -199,17 +200,17 @@ export async function POST(request: NextRequest) {
         }
 
         // Save sections
-        const sections = study.sections.map((section, index) => ({
+        const dbSections = sections.map((section) => ({
           study_id: savedStudy.id,
           title: section.title,
           content: section.content,
-          position: index + 1,
+          section_type: section.section_type,
+          position: section.order_index + 1,
         }));
 
-        await supabase.from("study_sections").insert(sections);
+        await supabase.from("study_sections").insert(dbSections);
 
         // Decrement credits only if no active subscription
-        // Note: study_count is auto-incremented by DB trigger on studies INSERT
         if (!hasActiveSubscription && creditsRemaining && creditsRemaining > 0) {
           await supabase
             .from("profiles")
