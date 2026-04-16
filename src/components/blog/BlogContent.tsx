@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SearchBar } from "@/components/search-bar";
 import { BlogFilters, type BlogFilterValues } from "@/components/blog/BlogFilters";
 import { BlogCard } from "@/components/blog/BlogCard";
 import { createBrowserClient } from "@/lib/supabase/browser";
+
+const ITEMS_PER_PAGE = 12;
 
 interface StudyResult {
   id: string;
@@ -47,6 +49,7 @@ async function fetchStudies(
 export function BlogContent() {
   const [studies, setStudies] = useState<StudyResult[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [testament, setTestament] = useState<string | null>(null);
   const [bookId, setBookId] = useState<string | null>(null);
 
@@ -62,10 +65,10 @@ export function BlogContent() {
       bookIdRef.current,
     );
     setStudies(results);
+    setCurrentPage(1);
     setLoading(false);
   }, []);
 
-  // Subscribe: initial data load
   useEffect(() => {
     doFetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,6 +86,17 @@ export function BlogContent() {
     setBookId(filters.bookId);
     doFetch();
   }, [doFetch]);
+
+  const totalPages = useMemo(() => {
+    if (!studies) return 1;
+    return Math.max(1, Math.ceil(studies.length / ITEMS_PER_PAGE));
+  }, [studies]);
+
+  const paginatedStudies = useMemo(() => {
+    if (!studies) return [];
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return studies.slice(start, start + ITEMS_PER_PAGE);
+  }, [studies, currentPage]);
 
   return (
     <div className="space-y-6">
@@ -106,18 +120,48 @@ export function BlogContent() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" data-testid="blog-results">
-          {studies.map((study) => (
-            <BlogCard
-              key={study.id}
-              title={study.title}
-              verseReference={study.verse_reference}
-              publishedAt={study.published_at}
-              bookName={study.book_name}
-              slug={study.slug}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" data-testid="blog-results">
+            {paginatedStudies.map((study) => (
+              <BlogCard
+                key={study.id}
+                title={study.title}
+                verseReference={study.verse_reference}
+                publishedAt={study.published_at}
+                bookName={study.book_name}
+                slug={study.slug}
+              />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <nav
+              className="flex items-center justify-center gap-2 pt-4"
+              aria-label="Paginação"
+              data-testid="blog-pagination"
+            >
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/50"
+              >
+                Anterior
+              </button>
+
+              <span className="px-3 text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </span>
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/50"
+              >
+                Próxima
+              </button>
+            </nav>
+          )}
+        </>
       )}
     </div>
   );
