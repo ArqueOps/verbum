@@ -30,10 +30,17 @@
 
 ## Tables
 
+### subscriptions
+- **Purpose**: Mirrors Caramelou subscription state — one row per user tracking their active plan and billing period.
+- **Columns**: `id` (UUID PK), `user_id` (UUID NOT NULL FK → `auth.users(id)`, `ON DELETE CASCADE`), `caramelou_subscription_id` (TEXT UNIQUE — provider subscription id), `plan_id` (TEXT NOT NULL), `status` (TEXT NOT NULL, CHECK IN `active`, `past_due`, `canceled`, `expired`), `current_period_start` (TIMESTAMPTZ), `current_period_end` (TIMESTAMPTZ), `created_at` (TIMESTAMPTZ), `updated_at` (TIMESTAMPTZ).
+- **Indexes**: `idx_subscriptions_user_id` on `user_id`; `idx_subscriptions_status` on `status`; `idx_subscriptions_caramelou_id` on `caramelou_subscription_id`.
+- **RLS**: Enabled. Policy `subscriptions_select_own` allows `authenticated` users to SELECT their own row (`user_id = auth.uid()`). Only `service_role` may write.
+- **Triggers**: `set_updated_at` BEFORE UPDATE via `update_updated_at()`.
+
 ### webhook_events
 - **Purpose**: Idempotency guard and audit log for payment provider webhooks (Caramelou relaying Stripe).
-- **Columns**: `id` (UUID PK), `event_id` (TEXT UNIQUE — provider event id), `event_type` (TEXT), `user_id` (UUID FK → `profiles.id`, nullable, `ON DELETE SET NULL`), `payload` (JSONB), `processed_at` (TIMESTAMPTZ), `created_at` (TIMESTAMPTZ).
-- **Indexes**: UNIQUE on `event_id` (auto-created, powers O(1) idempotency lookup); partial index on `user_id WHERE user_id IS NOT NULL` for audit queries.
+- **Columns**: `id` (UUID PK), `event_id` (TEXT UNIQUE — provider event id), `event_type` (TEXT), `user_id` (UUID FK → `auth.users(id)`, nullable, `ON DELETE SET NULL`), `payload` (JSONB), `processed_at` (TIMESTAMPTZ), `created_at` (TIMESTAMPTZ).
+- **Indexes**: UNIQUE on `event_id` (auto-created, powers O(1) idempotency lookup); index on `user_id` for audit queries.
 - **RLS**: Enabled with **no policies** — only `service_role` (which bypasses RLS) may read/write. `anon` and `authenticated` are denied by default.
 
 ## Migration History
@@ -41,4 +48,4 @@
 | Migration | Description |
 |-----------|-------------|
 | 00002_triggers_and_functions.sql | Trigger functions and triggers for profiles, studies, subscriptions |
-| 20260416160000_create_webhook_events.sql | Create `webhook_events` table for webhook idempotency and audit (Caramelou/Stripe) |
+| 20260416170000_create_subscriptions_and_webhook_events.sql | Create `subscriptions` and `webhook_events` tables for Caramelou/Stripe webhook processing |
