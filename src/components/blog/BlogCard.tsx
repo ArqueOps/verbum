@@ -29,6 +29,7 @@ export function BlogCard({
     <Link
       href={`/estudos/${slug}`}
       className="group flex flex-col gap-3 rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/30 hover:bg-accent/50"
+      data-testid="blog-card"
     >
       <span className="text-xs font-medium text-primary/70">
         {verseReference}

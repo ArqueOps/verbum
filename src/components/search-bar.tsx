@@ -78,6 +78,7 @@ export function SearchBar({
         placeholder={placeholder}
         className="h-10 w-full rounded-lg border border-input bg-transparent pl-9 pr-9 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
         aria-label={placeholder}
+        data-testid="search-input"
       />
       {displayValue.length > 0 && (
         <button

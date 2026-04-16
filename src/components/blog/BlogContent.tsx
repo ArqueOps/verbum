@@ -96,17 +96,17 @@ export function BlogContent() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
+        <div className="flex items-center justify-center py-16" data-testid="blog-loading">
           <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       ) : !studies || studies.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center" data-testid="blog-empty">
           <p className="text-sm font-medium text-muted-foreground">
             Nenhum estudo encontrado
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" data-testid="blog-results">
           {studies.map((study) => (
             <BlogCard
               key={study.id}

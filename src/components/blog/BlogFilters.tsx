@@ -59,7 +59,7 @@ export function BlogFilters({
   const hasActiveFilters = testament !== null || bookId !== null;
 
   return (
-    <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border bg-card p-4">
+    <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border bg-card p-4" data-testid="blog-filters">
       <div className="flex flex-col gap-1">
         <label
           htmlFor="testament-filter"
@@ -72,6 +72,7 @@ export function BlogFilters({
           value={testament ?? ""}
           onChange={(e) => handleTestamentChange(e.target.value)}
           className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+          data-testid="testament-filter"
         >
           <option value="">Todos</option>
           <option value="old">Antigo Testamento</option>
@@ -92,6 +93,7 @@ export function BlogFilters({
           onChange={(e) => handleBookChange(e.target.value)}
           disabled={loading}
           className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground disabled:opacity-50"
+          data-testid="book-filter"
         >
           <option value="">
             {loading ? "Carregando..." : "Todos os livros"}
@@ -109,6 +111,7 @@ export function BlogFilters({
           variant="ghost"
           size="sm"
           onClick={handleClearFilters}
+          data-testid="clear-filters"
         >
           Limpar filtros
         </Button>
