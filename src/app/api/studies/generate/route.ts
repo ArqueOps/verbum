@@ -126,7 +126,7 @@ export async function POST(request: Request) {
 
       try {
         const completion = await openai.chat.completions.create({
-          model: "gpt-4.1",
+          model: "gpt-5.4",
           stream: true,
           temperature: 0.7,
           messages: [
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
             content: fullContent,
             verse_reference: verseReference,
             slug,
-            model_used: "gpt-4.1",
+            model_used: "gpt-5.4",
             owner_id: user.id,
             language: "pt-BR",
           })
