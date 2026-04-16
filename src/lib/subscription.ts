@@ -18,7 +18,7 @@ export async function canGenerateStudy(
     .from("subscriptions")
     .select("status, current_period_end")
     .eq("user_id", userId)
-    .in("status", ["active", "cancelled"])
+    .in("status", ["active", "canceled"])
     .gt("current_period_end", nowIso)
     .order("current_period_end", { ascending: false })
     .limit(1)
