@@ -407,12 +407,11 @@ export type Database = {
         Returns: {
           id: string
           title: string
-          slug: string
           verse_reference: string
-          published_at: string | null
           book_name: string | null
           book_abbreviation: string | null
           book_testament: string | null
+          created_at: string
         }[]
       }
       consume_credit_and_save_study: {

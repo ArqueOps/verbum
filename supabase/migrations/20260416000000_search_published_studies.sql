@@ -61,7 +61,7 @@ BEGIN
     s.id,
     s.title,
     -- Construct verse_reference: "Book Chapter:VerseStart-VerseEnd"
-    s.book
+    coalesce(s.book, '')
       || CASE WHEN s.chapter IS NOT NULL THEN ' ' || s.chapter::text ELSE '' END
       || CASE WHEN s.verse_start IS NOT NULL THEN ':' || s.verse_start::text ELSE '' END
       || CASE WHEN s.verse_end IS NOT NULL AND s.verse_end <> s.verse_start

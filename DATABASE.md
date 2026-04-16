@@ -29,10 +29,10 @@
 - **Security**: `SECURITY DEFINER` with `SET search_path = public`.
 
 ### search_published_studies(query, testament, book_id)
-- **Type**: RPC function (SQL, STABLE)
+- **Type**: RPC function (plpgsql, STABLE, SECURITY DEFINER)
 - **Parameters**: `query text DEFAULT NULL`, `testament text DEFAULT NULL` ('old'/'new'), `book_id uuid DEFAULT NULL`
-- **Returns**: TABLE (id, title, slug, verse_reference, published_at, book_name, book_abbreviation, book_testament)
-- **Behavior**: Full-text search on published studies using Portuguese tsvector on `title + content`. Parses `verse_reference` (first word = abbreviation) to join `bible_books` for testament/book filtering. All filters are optional and combinable. Only returns `is_published = true` studies.
+- **Returns**: TABLE (id, title, verse_reference, book_name, book_abbreviation, book_testament, created_at)
+- **Behavior**: Full-text search on public studies using Portuguese tsvector on `title + content`. Joins `bible_books` on `bb.name = s.book` for testament/book filtering. Maps testament 'old'→'OT', 'new'→'NT'. Constructs `verse_reference` from `book + chapter + verse_start + verse_end`. All filters are optional and combinable. Only returns `is_public = true` studies.
 - **Indexes**: `idx_studies_fts` GIN index on generated `fts` tsvector column.
 - **Grants**: `authenticated`, `anon`.
 

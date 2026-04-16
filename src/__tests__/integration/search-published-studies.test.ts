@@ -52,7 +52,8 @@ describe("search_published_studies RPC", () => {
   let anonClient: SupabaseClient;
   let testUserId: string;
 
-  // Bible book IDs fetched from the real DB
+  // Bible book IDs fetched from the real DB (bible_books table, UUID PKs)
+  // bible_books.testament uses 'OT'/'NT' values
   let genesisBookId: string;
   let salmoBookId: string;
   let joaoBookId: string;
@@ -97,6 +98,7 @@ describe("search_published_studies RPC", () => {
     }
 
     // Insert test studies via service role (bypasses RLS)
+    // Remote DB schema: user_id, title, content, book (text), chapter, verse_start, verse_end, is_public
     const studies = [
       {
         user_id: testUserId,
@@ -202,8 +204,6 @@ describe("search_published_studies RPC", () => {
   // =========================================================================
 
   it("should find studies using Portuguese stemming (Salmo → Salmos)", async () => {
-    // Portuguese Snowball stemmer reduces regular plurals to the same stem
-    // "Salmo" (singular) should match "Salmos" (plural) in title/content
     const { data, error } = await anonClient.rpc("search_published_studies", {
       query: "Salmo",
     });
@@ -212,7 +212,6 @@ describe("search_published_studies RPC", () => {
     expect(data).toBeDefined();
 
     const ids = data!.map((r: { id: string }) => r.id);
-    // Study with "Salmos" in title should be found via stemmed "Salmo"
     expect(ids).toContain(studyIds[1]); // "As Orações dos Salmos"
   });
 
@@ -229,7 +228,7 @@ describe("search_published_studies RPC", () => {
     expect(data).toBeDefined();
     expect(Array.isArray(data)).toBe(true);
 
-    // All returned studies should have book_testament = 'OT'
+    // All returned studies should have book_testament = 'OT' (mapped from 'old')
     for (const row of data!) {
       expect(row.book_testament).toBe("OT");
     }
@@ -402,7 +401,8 @@ describe("search_published_studies RPC", () => {
     expect(study).toHaveProperty("book_testament");
     expect(study).toHaveProperty("created_at");
 
-    // Validate verse_reference format: "Gênesis 1:1-31"
+    // Validate verse_reference constructed from book + chapter + verse_start + verse_end
+    // "Gênesis 1:1-31"
     expect(study!.verse_reference).toBe("Gênesis 1:1-31");
     expect(study!.book_name).toBe("Gênesis");
     expect(study!.book_testament).toBe("OT");
