@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { fetchUserStudies } from "./actions";
 import { StudyFilters } from "./study-filters";
 import { StudyList } from "./study-list";
+import { Pagination } from "./pagination";
 
 export const metadata = {
   title: "Meus Estudos — Verbum",
@@ -13,6 +15,7 @@ interface SearchParams {
   livro?: string;
   de?: string;
   ate?: string;
+  pagina?: string;
 }
 
 export default async function MeusEstudosPage({
@@ -21,7 +24,9 @@ export default async function MeusEstudosPage({
   searchParams: Promise<SearchParams>;
 }) {
   const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/login");
@@ -32,6 +37,7 @@ export default async function MeusEstudosPage({
   const bookId = params.livro ? Number(params.livro) : null;
   const dateFrom = params.de ?? null;
   const dateTo = params.ate ?? null;
+  const currentPage = Math.max(1, Number(params.pagina) || 1);
 
   const { data: books } = await supabase
     .from("books")
@@ -44,33 +50,13 @@ export default async function MeusEstudosPage({
     if (match) bookAbbr = match.abbr;
   }
 
-  let query = supabase
-    .from("studies")
-    .select("id, title, verse_reference, created_at, slug")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: false });
-
-  if (favoritosOnly) {
-    const { data: bookmarkIds } = await supabase
-      .from("study_bookmarks")
-      .select("study_id")
-      .eq("user_id", user.id);
-
-    const ids = bookmarkIds?.map((b) => b.study_id) ?? [];
-    query = query.in("id", ids.length > 0 ? ids : ["__none__"]);
-  }
-
-  if (bookAbbr) {
-    query = query.like("verse_reference", `${bookAbbr} %`);
-  }
-  if (dateFrom) {
-    query = query.gte("created_at", `${dateFrom}T00:00:00`);
-  }
-  if (dateTo) {
-    query = query.lte("created_at", `${dateTo}T23:59:59`);
-  }
-
-  const { data: studies } = await query;
+  const result = await fetchUserStudies({
+    page: currentPage,
+    favoritosOnly,
+    bookAbbr,
+    dateFrom,
+    dateTo,
+  });
 
   return (
     <div className="space-y-6">
@@ -91,7 +77,14 @@ export default async function MeusEstudosPage({
         currentDateTo={dateTo}
       />
 
-      <StudyList studies={studies ?? []} />
+      <StudyList studies={result.studies} />
+
+      {result.totalPages > 1 && (
+        <Pagination
+          currentPage={result.page}
+          totalPages={result.totalPages}
+        />
+      )}
     </div>
   );
 }

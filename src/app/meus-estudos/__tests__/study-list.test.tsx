@@ -161,9 +161,58 @@ vi.mock("lucide-react", () => ({
   BookOpen: ({ className }: { className?: string }) => (
     <svg data-testid="book-open-icon" className={className} />
   ),
+  Sparkles: ({ className }: { className?: string }) => (
+    <svg data-testid="sparkles-icon" className={className} />
+  ),
+  Star: ({ className }: { className?: string }) => (
+    <svg data-testid="star-icon" className={className} />
+  ),
   Trash2: ({ className }: { className?: string }) => (
     <svg data-testid="trash-icon" className={className} />
   ),
+}));
+
+// Mock next/link
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: { children: React.ReactNode; href: string; className?: string }) => (
+    <a href={href} {...rest}>{children}</a>
+  ),
+}));
+
+// Mock StudyCard to render a simple testable structure
+vi.mock("@/components/study-card", () => ({
+  StudyCard: ({
+    title,
+    href,
+    isFavorite,
+    onToggleFavorite,
+  }: {
+    title: string;
+    book: string;
+    chapter: number;
+    verseStart: number;
+    verseEnd: number;
+    createdAt: string;
+    isPublic: boolean;
+    isFavorite: boolean;
+    onToggleFavorite: () => void;
+    href: string;
+  }) => (
+    <a href={href} data-testid="study-card" className="group">
+      <h3>{title}</h3>
+      <button
+        data-testid="favorite-toggle"
+        onClick={(e) => { e.preventDefault(); onToggleFavorite(); }}
+      >
+        {isFavorite ? "★" : "☆"}
+      </button>
+    </a>
+  ),
+}));
+
+// Mock server actions
+vi.mock("../actions", () => ({
+  toggleFavorite: vi.fn().mockResolvedValue({ success: true, is_bookmarked: true }),
 }));
 
 // --- Helpers ---
@@ -175,6 +224,8 @@ const mockStudies = [
     verse_reference: "Gênesis 1:1",
     created_at: "2026-04-10T12:00:00Z",
     slug: "estudo-sobre-genesis",
+    is_published: false,
+    is_bookmarked: false,
   },
   {
     id: "study-2",
@@ -182,6 +233,8 @@ const mockStudies = [
     verse_reference: "Salmo 23:1",
     created_at: "2026-04-12T14:00:00Z",
     slug: "salmos-de-davi",
+    is_published: true,
+    is_bookmarked: true,
   },
 ];
 
@@ -215,8 +268,8 @@ describe("StudyList", () => {
   it("renders delete button on each study card", async () => {
     await renderStudyList();
 
-    const trashIcons = screen.getAllByTestId("trash-icon");
-    expect(trashIcons).toHaveLength(2);
+    const triggers = screen.getAllByTestId("delete-trigger");
+    expect(triggers).toHaveLength(2);
   });
 
   it("clicking delete button opens confirmation modal", async () => {
@@ -352,10 +405,10 @@ describe("StudyList", () => {
     await renderStudyList([]);
 
     expect(
-      screen.getByText("Nenhum estudo encontrado.")
+      screen.getByText("Nenhum estudo ainda. Gere seu primeiro!")
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Ajuste os filtros ou crie um novo estudo.")
+      screen.getByText("Gerar estudo")
     ).toBeInTheDocument();
   });
 });
