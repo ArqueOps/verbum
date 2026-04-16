@@ -1,241 +1,98 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchVerses, buildVerseUrl } from "../bible-api";
+
+// Mock Supabase before importing the module
+vi.mock("@/lib/supabase/server", () => ({
+  createServerSupabaseClient: vi.fn(),
+}));
+
+import { fetchBiblePassage } from "../bible-api";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+function createMockQuery(versesData: { verse_number: number; text: string }[] | null) {
+  const query = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    single: vi.fn(),
+  };
+
+  // single() calls return book/version data
+  let singleCallCount = 0;
+  query.single.mockImplementation(() => {
+    singleCallCount++;
+    if (singleCallCount === 1) {
+      return Promise.resolve({ data: { name: "Gênesis", abbr: "gn" } });
+    }
+    return Promise.resolve({ data: { abbr: "nvi" } });
+  });
+
+  // The final query (without single) resolves with verses
+  query.order.mockReturnValue({ data: versesData });
+
+  return query;
+}
 
 describe("bible-api", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe("buildVerseUrl", () => {
-    it("should build URL for a single verse", () => {
-      const url = buildVerseUrl({
-        version: "nvi",
-        book: "gn",
-        chapter: 1,
-        verseStart: 1,
-      });
-
-      expect(url).toBe(
-        "https://www.abibliadigital.com.br/api/verses/nvi/gn/1/1"
-      );
-    });
-
-    it("should build URL for a verse range", () => {
-      const url = buildVerseUrl({
-        version: "nvi",
-        book: "gn",
-        chapter: 1,
-        verseStart: 1,
-        verseEnd: 5,
-      });
-
-      expect(url).toBe(
-        "https://www.abibliadigital.com.br/api/verses/nvi/gn/1/1-5"
-      );
-    });
-
-    it("should build single verse URL when verseEnd equals verseStart", () => {
-      const url = buildVerseUrl({
-        version: "acf",
-        book: "sl",
-        chapter: 23,
-        verseStart: 4,
-        verseEnd: 4,
-      });
-
-      expect(url).toBe(
-        "https://www.abibliadigital.com.br/api/verses/acf/sl/23/4"
-      );
-    });
-  });
-
-  describe("fetchVerses", () => {
-    it("should return success with joined verse text on valid response", async () => {
-      // Arrange
+  describe("fetchBiblePassage", () => {
+    it("should return joined verse text for a range of verses", async () => {
       const mockVerses = [
-        { text: "No princípio, Deus criou os céus e a terra." },
-        { text: "A terra era sem forma e vazia." },
+        { verse_number: 1, text: "No princípio, Deus criou os céus e a terra." },
+        { verse_number: 2, text: "A terra era sem forma e vazia." },
       ];
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: vi.fn().mockResolvedValue(mockVerses),
-        })
+
+      const mockQuery = createMockQuery(mockVerses);
+      const mockSupabase = { from: vi.fn().mockReturnValue(mockQuery) };
+      vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase as never);
+
+      const result = await fetchBiblePassage("1", 1, 1, 2, "1");
+
+      expect(result.text).toBe(
+        "1. No princípio, Deus criou os céus e a terra.\n2. A terra era sem forma e vazia."
       );
-
-      // Act
-      const result = await fetchVerses({
-        version: "nvi",
-        book: "gn",
-        chapter: 1,
-        verseStart: 1,
-        verseEnd: 2,
-      });
-
-      // Assert
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.text).toBe(
-          "No princípio, Deus criou os céus e a terra. A terra era sem forma e vazia."
-        );
-      }
+      expect(result.verseReference).toBe("Gênesis 1:1-2");
     });
 
-    it("should return success for single verse (non-array response)", async () => {
-      // Arrange
-      const mockVerse = { text: "O Senhor é meu pastor, nada me faltará." };
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: vi.fn().mockResolvedValue(mockVerse),
-        })
-      );
+    it("should return single verse without range in reference", async () => {
+      const mockVerses = [
+        { verse_number: 1, text: "O Senhor é meu pastor, nada me faltará." },
+      ];
 
-      // Act
-      const result = await fetchVerses({
-        version: "nvi",
-        book: "sl",
-        chapter: 23,
-        verseStart: 1,
-      });
+      const mockQuery = createMockQuery(mockVerses);
+      const mockSupabase = { from: vi.fn().mockReturnValue(mockQuery) };
+      vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase as never);
 
-      // Assert
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.text).toBe("O Senhor é meu pastor, nada me faltará.");
-      }
+      const result = await fetchBiblePassage("1", 23, 1, undefined, "1");
+
+      expect(result.text).toBe("1. O Senhor é meu pastor, nada me faltará.");
+      expect(result.verseReference).toBe("Gênesis 23:1");
     });
 
-    it("should return error with timeout message when fetch takes too long", async () => {
-      // Arrange
-      vi.useFakeTimers();
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockImplementation((_url: string, options: RequestInit) => {
-          return new Promise((_resolve, reject) => {
-            const onAbort = () => {
-              reject(new DOMException("The operation was aborted.", "AbortError"));
-            };
-            if (options?.signal) {
-              options.signal.addEventListener("abort", onAbort);
-            }
-          });
-        })
-      );
+    it("should return empty text when no verses found", async () => {
+      const mockQuery = createMockQuery(null);
+      const mockSupabase = { from: vi.fn().mockReturnValue(mockQuery) };
+      vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase as never);
 
-      // Act
-      const resultPromise = fetchVerses({
-        version: "nvi",
-        book: "gn",
-        chapter: 1,
-        verseStart: 1,
-      });
-      await vi.advanceTimersByTimeAsync(6000);
-      const result = await resultPromise;
+      const result = await fetchBiblePassage("1", 1, 999, undefined, "1");
 
-      // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.toLowerCase()).toContain("timed out");
-      }
-
-      vi.useRealTimers();
+      expect(result.text).toBe("");
     });
 
-    it("should return error without throwing on network failure", async () => {
-      // Arrange
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockRejectedValue(new Error("Network error"))
-      );
+    it("should include verse range in reference when verseEnd is provided", async () => {
+      const mockVerses = [{ verse_number: 16, text: "Porque Deus amou o mundo." }];
 
-      // Act
-      const result = await fetchVerses({
-        version: "nvi",
-        book: "gn",
-        chapter: 1,
-        verseStart: 1,
-      });
+      const mockQuery = createMockQuery(mockVerses);
+      const mockSupabase = { from: vi.fn().mockReturnValue(mockQuery) };
+      vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase as never);
 
-      // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Network error");
-      }
-    });
+      const result = await fetchBiblePassage("1", 3, 16, 17, "1");
 
-    it("should return error for non-200 response status", async () => {
-      // Arrange
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: false,
-          status: 404,
-        })
-      );
-
-      // Act
-      const result = await fetchVerses({
-        version: "nvi",
-        book: "invalid",
-        chapter: 1,
-        verseStart: 1,
-      });
-
-      // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain("404");
-      }
-    });
-
-    it("should call fetch with the correct URL for verse range", async () => {
-      // Arrange
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue([{ text: "verse" }]),
-      });
-      vi.stubGlobal("fetch", mockFetch);
-
-      // Act
-      await fetchVerses({
-        version: "acf",
-        book: "jo",
-        chapter: 3,
-        verseStart: 16,
-        verseEnd: 17,
-      });
-
-      // Assert
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://www.abibliadigital.com.br/api/verses/acf/jo/3/16-17",
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
-      );
-    });
-
-    it("should call fetch with the correct URL for single verse", async () => {
-      // Arrange
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ text: "verse" }),
-      });
-      vi.stubGlobal("fetch", mockFetch);
-
-      // Act
-      await fetchVerses({
-        version: "nvi",
-        book: "gn",
-        chapter: 1,
-        verseStart: 1,
-      });
-
-      // Assert
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://www.abibliadigital.com.br/api/verses/nvi/gn/1/1",
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
-      );
+      expect(result.verseReference).toBe("Gênesis 3:16-17");
     });
   });
 });

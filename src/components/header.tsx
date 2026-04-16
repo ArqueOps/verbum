@@ -14,6 +14,7 @@ interface NavLink {
 
 const navLinks: NavLink[] = [
   { href: "/", label: "Início" },
+  { href: "/blog", label: "Blog" },
   { href: "/estudos", label: "Estudos" },
   { href: "/planos", label: "Planos de Leitura" },
   { href: "/biblioteca", label: "Minha Biblioteca" },
