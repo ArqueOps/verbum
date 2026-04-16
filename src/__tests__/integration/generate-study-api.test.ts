@@ -37,13 +37,14 @@ vi.mock("@/lib/supabase/server", () => ({
 // ---------------------------------------------------------------------------
 
 import { POST } from "@/app/api/generate-study/route";
+import { NextRequest } from "next/server";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function createRequest(body: unknown): Request {
-  return new Request("http://localhost:3000/api/generate-study", {
+function createRequest(body: unknown): NextRequest {
+  return new NextRequest("http://localhost:3000/api/generate-study", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -413,7 +414,7 @@ describe("POST /api/generate-study", () => {
     });
 
     it("should return 400 for completely invalid JSON body", async () => {
-      const request = new Request(
+      const request = new NextRequest(
         "http://localhost:3000/api/generate-study",
         {
           method: "POST",
