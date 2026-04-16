@@ -1,5 +1,61 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
+const BIBLE_API_BASE = "https://www.abibliadigital.com.br/api/verses";
+const FETCH_TIMEOUT_MS = 5000;
+
+interface VerseParams {
+  version: string;
+  book: string;
+  chapter: number;
+  verseStart: number;
+  verseEnd?: number;
+}
+
+type FetchVersesResult =
+  | { success: true; text: string }
+  | { success: false; error: string };
+
+export function buildVerseUrl(params: VerseParams): string {
+  const { version, book, chapter, verseStart, verseEnd } = params;
+  const versePart =
+    verseEnd !== undefined && verseEnd !== verseStart
+      ? `${verseStart}-${verseEnd}`
+      : `${verseStart}`;
+  return `${BIBLE_API_BASE}/${version}/${book}/${chapter}/${versePart}`;
+}
+
+export async function fetchVerses(
+  params: VerseParams,
+): Promise<FetchVersesResult> {
+  const url = buildVerseUrl(params);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+
+    if (!response.ok) {
+      return { success: false, error: `HTTP error ${response.status}` };
+    }
+
+    const data = await response.json();
+    const verses = Array.isArray(data) ? data : [data];
+    const text = verses.map((v: { text: string }) => v.text).join(" ");
+
+    return { success: true, text };
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { success: false, error: "Request timed out" };
+    }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export interface PassageResult {
   text: string;
   verseReference: string;

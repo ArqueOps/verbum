@@ -190,6 +190,7 @@ export type Database = {
           chapter: number | null
           content: Json
           created_at: string
+          fts: unknown
           generation_time_ms: number | null
           id: string
           is_published: boolean
