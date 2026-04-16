@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -7,8 +8,45 @@ import { StudyCTA } from "@/components/study/StudyCTA";
 
 export const revalidate = 3600;
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app";
+
 interface StudyPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: StudyPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const study = await fetchStudy(slug);
+
+  if (!study) {
+    return { title: "Estudo não encontrado" };
+  }
+
+  const title = `${study.title} — Verbum`;
+  const description = `Estudo bíblico: ${study.verse_reference}`;
+  const url = `${SITE_URL}/estudos/${study.slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: study.title,
+      description,
+      url,
+      type: "article",
+      publishedTime: study.published_at ?? study.created_at,
+      images: [`${SITE_URL}/api/og/${study.slug}`],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: study.title,
+      description,
+    },
+  };
 }
 
 export async function generateStaticParams() {
@@ -76,7 +114,7 @@ export default async function StudyPage({ params }: StudyPageProps) {
     position: s.order_index,
   }));
 
-  const studyUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app"}/estudos/${study.slug}`;
+  const studyUrl = `${SITE_URL}/estudos/${study.slug}`;
 
   return (
     <article className="mx-auto max-w-3xl space-y-8 py-8">
