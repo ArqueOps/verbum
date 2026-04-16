@@ -42,74 +42,6 @@ export type Database = {
         }
         Relationships: []
       }
-      bible_chapters: {
-        Row: {
-          book_id: number
-          chapter_number: number
-          created_at: string
-          id: number
-          updated_at: string
-          verses_count: number
-        }
-        Insert: {
-          book_id: number
-          chapter_number: number
-          created_at?: string
-          id?: number
-          updated_at?: string
-          verses_count: number
-        }
-        Update: {
-          book_id?: number
-          chapter_number?: number
-          created_at?: string
-          id?: number
-          updated_at?: string
-          verses_count?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bible_chapters_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bible_verses: {
-        Row: {
-          book: string
-          chapter: number
-          created_at: string
-          id: number
-          text: string
-          updated_at: string
-          verse_number: number
-          version: string
-        }
-        Insert: {
-          book: string
-          chapter: number
-          created_at?: string
-          id?: number
-          text: string
-          updated_at?: string
-          verse_number: number
-          version?: string
-        }
-        Update: {
-          book?: string
-          chapter?: number
-          created_at?: string
-          id?: number
-          text?: string
-          updated_at?: string
-          verse_number?: number
-          version?: string
-        }
-        Relationships: []
-      }
       bible_versions: {
         Row: {
           abbr: string
@@ -211,93 +143,6 @@ export type Database = {
           },
         ]
       }
-      payments: {
-        Row: {
-          amount: number
-          created_at: string
-          currency: string
-          id: string
-          status: string
-          subscription_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          currency?: string
-          id?: string
-          status?: string
-          subscription_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          currency?: string
-          id?: string
-          status?: string
-          subscription_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payments_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "subscriptions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      plans: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          description: string | null
-          features: Json | null
-          id: string
-          is_active: boolean
-          name: string
-          price: number
-          slug: string
-          updated_at: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          is_active?: boolean
-          name: string
-          price: number
-          slug: string
-          updated_at?: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          price?: number
-          slug?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -306,7 +151,6 @@ export type Database = {
           id: string
           preferred_version: number | null
           role: Database["public"]["Enums"]["user_role"]
-          study_count: number
           updated_at: string
         }
         Insert: {
@@ -316,7 +160,6 @@ export type Database = {
           id: string
           preferred_version?: number | null
           role?: Database["public"]["Enums"]["user_role"]
-          study_count?: number
           updated_at?: string
         }
         Update: {
@@ -326,7 +169,6 @@ export type Database = {
           id?: string
           preferred_version?: number | null
           role?: Database["public"]["Enums"]["user_role"]
-          study_count?: number
           updated_at?: string
         }
         Relationships: [
@@ -428,131 +270,6 @@ export type Database = {
           },
         ]
       }
-      study_history: {
-        Row: {
-          created_at: string
-          id: string
-          study_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          study_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          study_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "study_history_study_id_fkey"
-            columns: ["study_id"]
-            isOneToOne: false
-            referencedRelation: "studies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      study_sections: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          position: number
-          study_id: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          position: number
-          study_id: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          position?: number
-          study_id?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "study_sections_study_id_fkey"
-            columns: ["study_id"]
-            isOneToOne: false
-            referencedRelation: "studies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      subscriptions: {
-        Row: {
-          created_at: string
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          plan_id: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          plan_id?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          plan_id?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_api_credentials: {
         Row: {
           created_at: string
@@ -596,10 +313,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      update_subscription_status: {
-        Args: Record<string, never>
-        Returns: number
-      }
+      [_ in never]: never
     }
     Enums: {
       user_role: "free" | "premium" | "admin"
