@@ -47,6 +47,7 @@ function creditsReducer(state: CreditsState, action: CreditsAction): CreditsStat
 interface UseCreditsReturn {
   creditsRemaining: number | null;
   isLoading: boolean;
+  isUnlimited: boolean;
   decrementCredits: () => void;
   refreshCredits: () => Promise<void>;
 }
@@ -134,9 +135,12 @@ export function useCredits(): UseCreditsReturn {
     await fetchCredits();
   }, [fetchCredits]);
 
+  const isUnlimited = state.creditsRemaining === Infinity;
+
   return {
     creditsRemaining: state.creditsRemaining,
     isLoading: state.isLoading,
+    isUnlimited,
     decrementCredits,
     refreshCredits,
   };
