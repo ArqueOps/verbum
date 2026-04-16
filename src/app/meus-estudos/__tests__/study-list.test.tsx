@@ -164,6 +164,25 @@ vi.mock("lucide-react", () => ({
   Trash2: ({ className }: { className?: string }) => (
     <svg data-testid="trash-icon" className={className} />
   ),
+  Star: ({ className }: { className?: string }) => (
+    <svg data-testid="star-icon" className={className} />
+  ),
+  Globe: ({ className }: { className?: string }) => (
+    <svg data-testid="globe-icon" className={className} />
+  ),
+  GlobeLock: ({ className }: { className?: string }) => (
+    <svg data-testid="globe-lock-icon" className={className} />
+  ),
+  Loader2: ({ className }: { className?: string }) => (
+    <svg data-testid="loader-icon" className={className} />
+  ),
+}));
+
+// Mock next/link
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: { children: React.ReactNode; href: string; className?: string }) => (
+    <a href={href} {...rest}>{children}</a>
+  ),
 }));
 
 // --- Helpers ---
@@ -175,6 +194,7 @@ const mockStudies = [
     verse_reference: "Gênesis 1:1",
     created_at: "2026-04-10T12:00:00Z",
     slug: "estudo-sobre-genesis",
+    is_published: false,
   },
   {
     id: "study-2",
@@ -182,6 +202,7 @@ const mockStudies = [
     verse_reference: "Salmo 23:1",
     created_at: "2026-04-12T14:00:00Z",
     slug: "salmos-de-davi",
+    is_published: true,
   },
 ];
 

@@ -46,7 +46,7 @@ export default async function MeusEstudosPage({
 
   let query = supabase
     .from("studies")
-    .select("id, title, verse_reference, created_at, slug")
+    .select("id, title, verse_reference, created_at, slug, is_published")
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
