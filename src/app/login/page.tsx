@@ -7,12 +7,17 @@ export const metadata = {
   description: "Faça login na plataforma Verbum.",
 };
 
-export default async function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{ redirect?: string }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const { redirect: redirectTo } = await searchParams;
 
   if (user) {
-    redirect("/dashboard");
+    redirect(redirectTo?.startsWith("/") ? redirectTo : "/dashboard");
   }
 
   return (
@@ -27,7 +32,7 @@ export default async function LoginPage() {
           </p>
         </div>
 
-        <LoginForm />
+        <LoginForm redirectTo={redirectTo} />
       </div>
     </main>
   );

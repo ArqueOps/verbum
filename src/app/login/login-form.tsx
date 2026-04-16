@@ -60,17 +60,20 @@ const oauthProviders = [
   { id: "github" as const, label: "Entrar com GitHub", icon: <GitHubIcon /> },
 ];
 
-export default function LoginForm() {
+export default function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const [state, formAction, pending] = useActionState(signIn, initialState);
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   async function handleOAuthLogin(provider: "google" | "apple" | "github") {
     setLoadingProvider(provider);
     const supabase = createBrowserClient();
+    const callbackUrl = redirectTo
+      ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
+      : `${window.location.origin}/auth/callback`;
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl,
       },
     });
   }
@@ -105,6 +108,7 @@ export default function LoginForm() {
 
       {/* Email/Password Form */}
       <form action={formAction} className="space-y-5">
+        {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-foreground/80">
             E-mail

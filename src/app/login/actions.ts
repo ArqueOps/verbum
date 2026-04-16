@@ -54,5 +54,11 @@ export async function signIn(
     return { error: "E-mail ou senha inválidos" };
   }
 
-  redirect("/dashboard");
+  const redirectTo = formData.get("redirectTo");
+  const destination =
+    typeof redirectTo === "string" && redirectTo.startsWith("/")
+      ? redirectTo
+      : "/dashboard";
+
+  redirect(destination);
 }

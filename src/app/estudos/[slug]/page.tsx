@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { StudySections } from "@/components/study/StudySections";
+import { StudyShareButtons } from "@/components/study/StudyShareButtons";
 
 export const revalidate = 3600;
 
@@ -60,6 +62,11 @@ export default async function StudyPage({ params }: StudyPageProps) {
     notFound();
   }
 
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const authorName =
     (study.profiles as unknown as { display_name: string | null })
       ?.display_name ?? "";
@@ -73,6 +80,11 @@ export default async function StudyPage({ params }: StudyPageProps) {
     content: typeof s.content === "string" ? s.content : String(s.content),
     position: s.order_index,
   }));
+
+  const ctaHref = user ? "/generate" : "/login?redirect=/generate";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app";
+  const studyUrl = `${baseUrl}/estudos/${slug}`;
 
   return (
     <article className="mx-auto max-w-3xl space-y-8 py-8">
@@ -103,6 +115,20 @@ export default async function StudyPage({ params }: StudyPageProps) {
       </header>
 
       <StudySections sections={sections} defaultAllOpen />
+
+      <footer className="space-y-6 border-t border-foreground/10 pt-8">
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+          <Link
+            data-testid="cta-generate-study"
+            href={ctaHref}
+            className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/80"
+          >
+            Gere seu próprio estudo
+          </Link>
+
+          <StudyShareButtons studyUrl={studyUrl} studyTitle={study.title} />
+        </div>
+      </footer>
     </article>
   );
 }
