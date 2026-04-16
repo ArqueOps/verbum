@@ -28,8 +28,17 @@
 - **Behavior**: Checks all subscriptions — expires active ones past `current_period_end`, reactivates expired ones with renewed `current_period_end`. Designed to be called by a cron job or edge function.
 - **Security**: `SECURITY DEFINER` with `SET search_path = public`.
 
+## Tables
+
+### webhook_events
+- **Purpose**: Idempotency guard and audit log for payment provider webhooks (Caramelou relaying Stripe).
+- **Columns**: `id` (UUID PK), `event_id` (TEXT UNIQUE — provider event id), `event_type` (TEXT), `user_id` (UUID FK → `profiles.id`, nullable, `ON DELETE SET NULL`), `payload` (JSONB), `processed_at` (TIMESTAMPTZ), `created_at` (TIMESTAMPTZ).
+- **Indexes**: UNIQUE on `event_id` (auto-created, powers O(1) idempotency lookup); partial index on `user_id WHERE user_id IS NOT NULL` for audit queries.
+- **RLS**: Enabled with **no policies** — only `service_role` (which bypasses RLS) may read/write. `anon` and `authenticated` are denied by default.
+
 ## Migration History
 
 | Migration | Description |
 |-----------|-------------|
 | 00002_triggers_and_functions.sql | Trigger functions and triggers for profiles, studies, subscriptions |
+| 20260416160000_create_webhook_events.sql | Create `webhook_events` table for webhook idempotency and audit (Caramelou/Stripe) |
