@@ -17,6 +17,8 @@ interface StudyResult {
   book_name: string | null;
   book_abbreviation: string | null;
   book_testament: string | null;
+  summary: string | null;
+  author_name: string | null;
 }
 
 async function fetchStudies(
@@ -130,6 +132,8 @@ export function BlogContent() {
                 publishedAt={study.published_at}
                 bookName={study.book_name}
                 slug={study.slug}
+                summary={study.summary}
+                authorName={study.author_name}
               />
             ))}
           </div>
