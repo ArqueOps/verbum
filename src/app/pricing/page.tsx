@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Planos e Preços — Verbum",
   description:
     "Escolha o plano ideal para seus estudos bíblicos com IA. Comece grátis ou desbloqueie recursos avançados com créditos e assinatura mensal.",
+  alternates: {
+    canonical: "/pricing",
+  },
   openGraph: {
     title: "Planos e Preços — Verbum",
     description:

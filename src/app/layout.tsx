@@ -18,7 +18,10 @@ const inter = Inter({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Verbum — Profundidade que ilumina",
   description:
     "Plataforma de estudo bíblico com inteligência artificial. Explore as Escrituras com profundidade teológica e clareza acessível.",

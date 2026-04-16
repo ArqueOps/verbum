@@ -26,8 +26,11 @@ export async function generateMetadata({
   const ogImageUrl = `${SITE_URL}/api/og/${slug}`;
 
   return {
-    title: study.title,
+    title: `${study.title} — Verbum`,
     description: `Estudo bíblico sobre ${study.verse_reference}`,
+    alternates: {
+      canonical: `/estudos/${slug}`,
+    },
     openGraph: {
       title: study.title,
       description: `Estudo bíblico sobre ${study.verse_reference}`,
