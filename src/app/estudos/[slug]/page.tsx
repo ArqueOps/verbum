@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -5,8 +6,47 @@ import { StudySections } from "@/components/study/StudySections";
 
 export const revalidate = 3600;
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app";
+
 interface StudyPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: StudyPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const study = await fetchStudy(slug);
+
+  if (!study) return {};
+
+  const ogImageUrl = `${SITE_URL}/api/og/${slug}`;
+
+  return {
+    title: study.title,
+    description: `Estudo bíblico sobre ${study.verse_reference}`,
+    openGraph: {
+      title: study.title,
+      description: `Estudo bíblico sobre ${study.verse_reference}`,
+      type: "article",
+      url: `${SITE_URL}/estudos/${slug}`,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          type: "image/png",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: study.title,
+      description: `Estudo bíblico sobre ${study.verse_reference}`,
+      images: [ogImageUrl],
+    },
+  };
 }
 
 export async function generateStaticParams() {
