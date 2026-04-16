@@ -397,6 +397,23 @@ export type Database = {
         }
         Returns: Json
       }
+      search_published_studies: {
+        Args: {
+          query?: string
+          testament?: string
+          book_id?: string
+        }
+        Returns: {
+          id: string
+          title: string
+          slug: string
+          verse_reference: string
+          published_at: string | null
+          book_name: string | null
+          book_abbreviation: string | null
+          book_testament: string | null
+        }[]
+      }
       consume_credit_and_save_study: {
         Args: {
           p_user_id: string

@@ -95,32 +95,40 @@ export function useCredits(): UseCreditsReturn {
   useEffect(() => {
     const supabase = supabaseRef.current;
 
-    const channel = supabase
-      .channel("credits-sync")
-      .on<Pick<Profile, "credits_remaining" | "role">>(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "profiles",
-        },
-        (payload) => {
-          if (
-            userIdRef.current &&
-            (payload.new as Profile).id === userIdRef.current
-          ) {
-            const updated = payload.new as Pick<Profile, "credits_remaining" | "role">;
-            dispatch({
-              type: "LOADED",
-              credits: computeCredits(updated.credits_remaining, updated.role),
-            });
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel("credits-sync")
+        .on<Pick<Profile, "credits_remaining" | "role">>(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "profiles",
+          },
+          (payload) => {
+            if (
+              userIdRef.current &&
+              (payload.new as Profile).id === userIdRef.current
+            ) {
+              const updated = payload.new as Pick<Profile, "credits_remaining" | "role">;
+              dispatch({
+                type: "LOADED",
+                credits: computeCredits(updated.credits_remaining, updated.role),
+              });
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    } catch {
+      // Realtime subscription may fail (e.g. strict-mode double-render).
+      // Credits still work via REST fetch — realtime sync is best-effort.
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, []);
 
