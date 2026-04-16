@@ -13,16 +13,15 @@ interface ParsedReference {
   verseEnd: number;
 }
 
+function removeAccents(text: string): string {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 function normalizeBookName(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "-");
+  return removeAccents(name).toLowerCase().replace(/\s+/g, "-");
 }
 
 function parseVerseReference(verseReference: string): ParsedReference {
-  // Matches patterns like "Gn 1:1-3", "Jo 3:16", "1Co 15:1-4", "2Cr 7:14-16"
   const match = verseReference
     .trim()
     .match(/^(\d?\s?[A-Za-zÀ-ÿ]+)\s+(\d+):(\d+)(?:-(\d+))?$/);
@@ -33,7 +32,9 @@ function parseVerseReference(verseReference: string): ParsedReference {
     );
   }
 
-  const abbreviation = match[1]!.replace(/\s+/g, "").toLowerCase();
+  const abbreviation = removeAccents(
+    match[1]!.replace(/\s+/g, ""),
+  ).toLowerCase();
   const chapter = parseInt(match[2]!, 10);
   const verseStart = parseInt(match[3]!, 10);
   const verseEnd = match[4] ? parseInt(match[4], 10) : verseStart;
@@ -54,20 +55,6 @@ function buildSlug(
   }
 
   return `${normalizedBook}-${chapter}-${verseStart}-${verseEnd}-estudo`;
-}
-
-async function fetchBookMappings(
-  supabase: SupabaseClient<Database>,
-): Promise<BookMapping[]> {
-  const { data, error } = await supabase
-    .from("bible_books")
-    .select("abbreviation, name");
-
-  if (error) {
-    throw new Error(`Failed to fetch bible_books: ${error.message}`);
-  }
-
-  return data;
 }
 
 async function resolveSlugConflict(
@@ -103,14 +90,13 @@ async function resolveSlugConflict(
 
 export async function generateStudySlug(
   verseReference: string,
+  bookMappings: BookMapping[],
   supabase: SupabaseClient<Database>,
 ): Promise<string> {
   const parsed = parseVerseReference(verseReference);
 
-  const bookMappings = await fetchBookMappings(supabase);
-
   const book = bookMappings.find(
-    (b) => b.abbreviation.toLowerCase() === parsed.abbreviation,
+    (b) => removeAccents(b.abbreviation).toLowerCase() === parsed.abbreviation,
   );
 
   if (!book) {
