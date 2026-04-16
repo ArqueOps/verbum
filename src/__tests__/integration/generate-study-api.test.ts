@@ -37,17 +37,18 @@ vi.mock("@/lib/supabase/server", () => ({
 // ---------------------------------------------------------------------------
 
 import { POST } from "@/app/api/generate-study/route";
+import type { NextRequest } from "next/server";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function createRequest(body: unknown): Request {
+function createRequest(body: unknown): NextRequest {
   return new Request("http://localhost:3000/api/generate-study", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+  }) as unknown as NextRequest;
 }
 
 async function readSSEStream(response: Response): Promise<string[]> {
@@ -420,7 +421,7 @@ describe("POST /api/generate-study", () => {
           headers: { "Content-Type": "application/json" },
           body: "not json at all",
         },
-      );
+      ) as unknown as NextRequest;
 
       const response = await POST(request);
       expect(response.status).toBe(400);
