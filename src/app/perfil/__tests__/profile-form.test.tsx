@@ -4,7 +4,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { ProfileFormState } from "../actions";
 
 type FormAction = (payload: FormData) => void;
-type UseActionStateReturn = [ProfileFormState, FormAction, boolean];
 
 const defaultState: ProfileFormState = { success: false, message: "" };
 let mockState: ProfileFormState = defaultState;

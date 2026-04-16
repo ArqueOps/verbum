@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Image from "next/image";
 import { updateProfile, type ProfileFormState } from "./actions";
 
 interface ProfileFormProps {
@@ -87,9 +88,11 @@ export function ProfileForm({
 
       {initialAvatarUrl && (
         <div className="flex items-center gap-4">
-          <img
+          <Image
             src={initialAvatarUrl}
             alt="Avatar atual"
+            width={64}
+            height={64}
             className="h-16 w-16 rounded-full border border-foreground/10 object-cover"
           />
           <span className="text-sm text-foreground/60">Avatar atual</span>

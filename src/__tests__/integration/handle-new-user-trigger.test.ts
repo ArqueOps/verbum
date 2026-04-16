@@ -16,10 +16,9 @@ import { describe, it, expect, afterAll } from "vitest";
 const SUPABASE_URL = `https://${process.env.CRED_SUPABASE_PROJECT_REF}.supabase.co`;
 const SERVICE_ROLE_KEY = process.env.CRED_SUPABASE_SERVICE_ROLE_KEY!;
 
-let admin: SupabaseClient;
 const testUserIds: string[] = [];
 
-admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 

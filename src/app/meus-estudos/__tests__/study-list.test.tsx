@@ -41,7 +41,6 @@ vi.mock("@base-ui/react/alert-dialog", () => {
   function Trigger({
     children,
     render: renderProp,
-    className: _className,
     ...rest
   }: {
     children?: React.ReactNode;
@@ -78,7 +77,6 @@ vi.mock("@base-ui/react/alert-dialog", () => {
 
   function Popup({
     children,
-    className: _className,
     ...rest
   }: {
     children?: React.ReactNode;
@@ -95,7 +93,6 @@ vi.mock("@base-ui/react/alert-dialog", () => {
 
   function Title({
     children,
-    className: _className,
     ...rest
   }: {
     children?: React.ReactNode;
@@ -106,7 +103,6 @@ vi.mock("@base-ui/react/alert-dialog", () => {
 
   function Description({
     children,
-    className: _className,
     ...rest
   }: {
     children?: React.ReactNode;
