@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { StudySections } from "@/components/study/StudySections";
+import { ShareButtons } from "@/components/study/ShareButtons";
+import { StudyCTA } from "@/components/study/StudyCTA";
 
 export const revalidate = 3600;
 
@@ -74,6 +76,8 @@ export default async function StudyPage({ params }: StudyPageProps) {
     position: s.order_index,
   }));
 
+  const studyUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app"}/estudos/${study.slug}`;
+
   return (
     <article className="mx-auto max-w-3xl space-y-8 py-8">
       <header className="space-y-3">
@@ -100,9 +104,13 @@ export default async function StudyPage({ params }: StudyPageProps) {
             </>
           )}
         </div>
+
+        <ShareButtons title={study.title} url={studyUrl} />
       </header>
 
       <StudySections sections={sections} defaultAllOpen />
+
+      <StudyCTA />
     </article>
   );
 }
