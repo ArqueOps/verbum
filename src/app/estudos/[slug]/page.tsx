@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { createServerClient } from "@supabase/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { StudySections } from "@/components/study/StudySections";
 
@@ -9,7 +10,13 @@ interface StudyPageProps {
 }
 
 export async function generateStaticParams() {
-  const supabase = await createServerSupabaseClient();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return [];
+
+  const supabase = createServerClient(url, anonKey, {
+    cookies: { getAll: () => [], setAll: () => {} },
+  });
 
   const { data: studies } = await supabase
     .from("studies")
