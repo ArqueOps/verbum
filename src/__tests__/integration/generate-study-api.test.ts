@@ -36,6 +36,7 @@ vi.mock("@/lib/supabase/server", () => ({
 // Import the route handler under test
 // ---------------------------------------------------------------------------
 
+import { NextRequest } from "next/server";
 import { POST } from "@/app/api/generate-study/route";
 import { NextRequest } from "next/server";
 
