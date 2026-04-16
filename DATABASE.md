@@ -42,3 +42,11 @@
 |-----------|-------------|
 | 00002_triggers_and_functions.sql | Trigger functions and triggers for profiles, studies, subscriptions |
 | 20260416160000_create_webhook_events.sql | Create `webhook_events` table for webhook idempotency and audit (Caramelou/Stripe) |
+| 20260416170000_create_subscriptions_and_webhook_events.sql | Create `subscriptions` table (mirrors Caramelou state) and `webhook_events` (idempotent) |
+| 20260416180000_add_admin_moderation_and_subscription_management.sql | Add `studies.unpublish_reason`, `profiles.is_active`, subscription lifecycle columns, and `subscription_admin_actions` audit table |
+
+### subscription_admin_actions
+- **Purpose**: Audit log for admin grant/revoke/extend actions on subscriptions.
+- **Columns**: `id` (UUID PK), `subscription_id` (UUID FK → `subscriptions.id`, nullable, `ON DELETE SET NULL`), `user_id` (UUID FK → `auth.users.id`, `ON DELETE CASCADE`), `action_type` (TEXT CHECK `grant`/`revoke`/`extend`), `plan_interval` (TEXT CHECK `monthly`/`annual`), `period_months` (INTEGER), `extend_days` (INTEGER), `reason` (TEXT), `performed_by` (UUID FK → `auth.users.id`, `ON DELETE CASCADE`), `created_at` (TIMESTAMPTZ).
+- **Indexes**: `idx_subscription_admin_actions_user_id`, `idx_subscription_admin_actions_subscription_id`.
+- **RLS**: Enabled. SELECT restricted to users with `profiles.role = 'admin'`. Writes via `service_role` only (bypasses RLS).
