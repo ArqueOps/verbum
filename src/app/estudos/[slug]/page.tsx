@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -9,6 +10,22 @@ export const revalidate = 3600;
 
 interface StudyPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: StudyPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const study = await fetchStudy(slug);
+  if (!study) return {};
+
+  return {
+    title: `${study.title} — Verbum`,
+    description: `Estudo bíblico: ${study.verse_reference}`,
+    alternates: {
+      canonical: `/estudos/${slug}`,
+    },
+  };
 }
 
 export async function generateStaticParams() {
