@@ -16,13 +16,18 @@ function computeCredits(studyCount: number, role: UserRole): number {
   return Math.max(0, FREE_CREDIT_LIMIT - studyCount);
 }
 
+function isUnlimitedRole(role: UserRole): boolean {
+  return role === "premium" || role === "admin";
+}
+
 interface CreditsState {
   creditsRemaining: number | null;
   isLoading: boolean;
+  isUnlimited: boolean;
 }
 
 type CreditsAction =
-  | { type: "LOADED"; credits: number }
+  | { type: "LOADED"; credits: number; isUnlimited: boolean }
   | { type: "UNAUTHENTICATED" }
   | { type: "LOADING" }
   | { type: "DECREMENT" };
@@ -30,9 +35,9 @@ type CreditsAction =
 function creditsReducer(state: CreditsState, action: CreditsAction): CreditsState {
   switch (action.type) {
     case "LOADED":
-      return { creditsRemaining: action.credits, isLoading: false };
+      return { creditsRemaining: action.credits, isLoading: false, isUnlimited: action.isUnlimited };
     case "UNAUTHENTICATED":
-      return { creditsRemaining: null, isLoading: false };
+      return { creditsRemaining: null, isLoading: false, isUnlimited: false };
     case "LOADING":
       return { ...state, isLoading: true };
     case "DECREMENT": {
@@ -47,6 +52,7 @@ function creditsReducer(state: CreditsState, action: CreditsAction): CreditsStat
 interface UseCreditsReturn {
   creditsRemaining: number | null;
   isLoading: boolean;
+  isUnlimited: boolean;
   decrementCredits: () => void;
   refreshCredits: () => Promise<void>;
 }
@@ -55,6 +61,7 @@ export function useCredits(): UseCreditsReturn {
   const [state, dispatch] = useReducer(creditsReducer, {
     creditsRemaining: null,
     isLoading: true,
+    isUnlimited: false,
   });
   const userIdRef = useRef<string | null>(null);
   const supabaseRef = useRef(createBrowserClient());
@@ -83,6 +90,7 @@ export function useCredits(): UseCreditsReturn {
       dispatch({
         type: "LOADED",
         credits: computeCredits(profile.study_count, profile.role),
+        isUnlimited: isUnlimitedRole(profile.role),
       });
     } else {
       dispatch({ type: "UNAUTHENTICATED" });
@@ -114,6 +122,7 @@ export function useCredits(): UseCreditsReturn {
             dispatch({
               type: "LOADED",
               credits: computeCredits(updated.study_count, updated.role),
+              isUnlimited: isUnlimitedRole(updated.role),
             });
           }
         }
@@ -137,6 +146,7 @@ export function useCredits(): UseCreditsReturn {
   return {
     creditsRemaining: state.creditsRemaining,
     isLoading: state.isLoading,
+    isUnlimited: state.isUnlimited,
     decrementCredits,
     refreshCredits,
   };
