@@ -556,6 +556,35 @@ export type Database = {
           },
         ]
       }
+      user_credits: {
+        Row: {
+          balance: number
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_api_credentials: {
         Row: {
           created_at: string
@@ -599,6 +628,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_credit_and_save_study: {
+        Args: {
+          p_title: string
+          p_slug: string
+          p_verse_reference: string
+          p_content: string
+          p_model_used: string
+          p_language?: string
+          p_sections?: Json
+        }
+        Returns: string
+      }
       decrement_credits_on_study: {
         Args: Record<string, never>
         Returns: undefined
