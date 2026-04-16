@@ -345,6 +345,144 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          status: "active" | "past_due" | "canceled" | "expired"
+          plan_id: string
+          plan_interval: "monthly" | "annual" | null
+          current_period_start: string | null
+          current_period_end: string | null
+          caramelou_subscription_id: string | null
+          canceled_at: string | null
+          cancellation_reason: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          status?: "active" | "past_due" | "canceled" | "expired"
+          plan_id?: string
+          plan_interval?: "monthly" | "annual" | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          caramelou_subscription_id?: string | null
+          canceled_at?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          status?: "active" | "past_due" | "canceled" | "expired"
+          plan_id?: string
+          plan_interval?: "monthly" | "annual" | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          caramelou_subscription_id?: string | null
+          canceled_at?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_admin_actions: {
+        Row: {
+          id: string
+          subscription_id: string | null
+          user_id: string
+          action_type: "grant" | "revoke" | "extend"
+          plan_interval: "monthly" | "annual" | null
+          period_months: number | null
+          extend_days: number | null
+          reason: string | null
+          performed_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          subscription_id?: string | null
+          user_id: string
+          action_type: "grant" | "revoke" | "extend"
+          plan_interval?: "monthly" | "annual" | null
+          period_months?: number | null
+          extend_days?: number | null
+          reason?: string | null
+          performed_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          subscription_id?: string | null
+          user_id?: string
+          action_type?: "grant" | "revoke" | "extend"
+          plan_interval?: "monthly" | "annual" | null
+          period_months?: number | null
+          extend_days?: number | null
+          reason?: string | null
+          performed_by?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_admin_actions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_cancellations: {
+        Row: {
+          id: string
+          user_id: string
+          subscription_id: string | null
+          reason: string | null
+          canceled_at: string
+          canceled_by: string | null
+          action_type: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          subscription_id?: string | null
+          reason?: string | null
+          canceled_at?: string
+          canceled_by?: string | null
+          action_type?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          subscription_id?: string | null
+          reason?: string | null
+          canceled_at?: string
+          canceled_by?: string | null
+          action_type?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_cancellations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_credits: {
         Row: {
           created_at: string
@@ -385,6 +523,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      webhook_events: {
+        Row: {
+          id: string
+          event_id: string
+          event_type: string
+          user_id: string | null
+          payload: Json
+          processed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          event_type: string
+          user_id?: string | null
+          payload: Json
+          processed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          event_type?: string
+          user_id?: string | null
+          payload?: Json
+          processed_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
