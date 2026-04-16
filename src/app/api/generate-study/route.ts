@@ -209,26 +209,13 @@ export async function POST(request: NextRequest) {
         await supabase.from("study_sections").insert(sections);
 
         // Decrement credits only if no active subscription
+        // Note: study_count is auto-incremented by DB trigger on studies INSERT
         if (!hasActiveSubscription && creditsRemaining && creditsRemaining > 0) {
           await supabase
             .from("profiles")
             .update({
               credits_remaining: creditsRemaining - 1,
             } as Record<string, unknown>)
-            .eq("id", user.id);
-        }
-
-        // Increment study count (best effort)
-        const { data: currentProfile } = await supabase
-          .from("profiles")
-          .select("study_count")
-          .eq("id", user.id)
-          .single();
-
-        if (currentProfile) {
-          await supabase
-            .from("profiles")
-            .update({ study_count: currentProfile.study_count + 1 })
             .eq("id", user.id);
         }
 
