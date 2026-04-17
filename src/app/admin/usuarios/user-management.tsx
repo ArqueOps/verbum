@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
-  AlertDialogTrigger,
   AlertDialogPopup,
   AlertDialogTitle,
   AlertDialogDescription,
@@ -59,7 +58,7 @@ function formatDateTime(dateStr: string | null): string {
   });
 }
 
-function StatusBadge({ status }: { status: "active" | "past_due" | "canceled" | "expired" | null }) {
+function StatusBadge({ status }: { status: string | null }) {
   const config = {
     active: { label: "Ativo", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
     past_due: { label: "Pendente", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" },
@@ -67,7 +66,8 @@ function StatusBadge({ status }: { status: "active" | "past_due" | "canceled" | 
     expired: { label: "Expirado", className: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400" },
   };
 
-  const { label, className } = config[status ?? "expired"] ?? config.expired;
+  const key = (status ?? "expired") as keyof typeof config;
+  const { label, className } = config[key] ?? config.expired;
 
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${className}`}>
@@ -370,18 +370,13 @@ function CancellationHistoryPanel({
                   <span className="text-xs font-medium text-muted-foreground">
                     {formatDateTime(entry.canceled_at)}
                   </span>
-                  {entry.action_type && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {entry.action_type}
-                    </span>
-                  )}
                 </div>
                 <p className="text-sm text-foreground">
                   {entry.reason ?? "Sem motivo informado"}
                 </p>
-                {entry.canceled_by && (
+                {entry.admin_id && (
                   <p className="text-xs text-muted-foreground">
-                    Por: {entry.canceled_by}
+                    Por: {entry.admin_id}
                   </p>
                 )}
               </div>

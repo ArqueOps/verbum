@@ -11,6 +11,12 @@ export interface AdminUser {
   subscription_plan: string | null;
 }
 
+export interface AdminUserRow extends AdminUser {
+  plan_label: string | null;
+  subscription_end: string | null;
+  last_sign_in_at: string | null;
+}
+
 export interface ListUsersParams {
   search?: string;
   page?: number;

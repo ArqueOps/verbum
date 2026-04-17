@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface TransactionEvent {
@@ -54,37 +54,59 @@ function formatDate(iso: string): string {
   });
 }
 
+type State = {
+  events: TransactionEvent[];
+  total: number;
+  page: number;
+  loading: boolean;
+};
+
+type Action =
+  | { type: "set_page"; page: number }
+  | { type: "loaded"; events: TransactionEvent[]; total: number };
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case "set_page":
+      return { ...state, page: action.page, loading: true };
+    case "loaded":
+      return { ...state, events: action.events, total: action.total, loading: false };
+  }
+}
+
 export function TransactionHistory({ userId }: TransactionHistoryProps) {
-  const [events, setEvents] = useState<TransactionEvent[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [state, dispatch] = useReducer(reducer, {
+    events: [],
+    total: 0,
+    page: 0,
+    loading: true,
+  });
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const { events, total, page, loading } = state;
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
 
-  const fetchEvents = useCallback(async () => {
-    setLoading(true);
+  useEffect(() => {
+    let cancelled = false;
+
     const supabase = createClient();
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, count } = await supabase
+    supabase
       .from("subscription_events")
       .select("id, event_type, amount, status, created_at", {
         count: "exact",
       })
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .range(from, to);
+      .range(from, to)
+      .then(({ data, count }) => {
+        if (cancelled) return;
+        dispatch({ type: "loaded", events: data ?? [], total: count ?? 0 });
+      });
 
-    setEvents(data ?? []);
-    setTotal(count ?? 0);
-    setLoading(false);
+    return () => { cancelled = true; };
   }, [userId, page]);
-
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
 
   return (
     <section className="space-y-4">
@@ -154,7 +176,7 @@ export function TransactionHistory({ userId }: TransactionHistoryProps) {
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-2">
               <button
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                onClick={() => dispatch({ type: "set_page", page: Math.max(0, page - 1) })}
                 disabled={page === 0}
                 className="rounded-md border border-foreground/15 px-3 py-1.5 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -165,7 +187,7 @@ export function TransactionHistory({ userId }: TransactionHistoryProps) {
               </span>
               <button
                 onClick={() =>
-                  setPage((p) => Math.min(totalPages - 1, p + 1))
+                  dispatch({ type: "set_page", page: Math.min(totalPages - 1, page + 1) })
                 }
                 disabled={page >= totalPages - 1}
                 className="rounded-md border border-foreground/15 px-3 py-1.5 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-40"
