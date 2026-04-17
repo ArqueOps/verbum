@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { listUsers } from "@/lib/admin-users";
+import { createServerSupabaseClient as createClient } from "@/lib/supabase/server";
 import { UserManagement } from "./user-management";
 
 export const metadata = {
@@ -38,7 +39,8 @@ async function UsersContent({
     ? Number(params.perPage)
     : 10;
 
-  const { users, total } = await listUsers({ search, page, perPage });
+  const supabase = await createClient();
+  const { users, total } = await listUsers(supabase, { search, page, pageSize: perPage });
 
   return (
     <UserManagement

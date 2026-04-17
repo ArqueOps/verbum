@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-auth";
+import { createServerSupabaseClient as createClient } from "@/lib/supabase/server";
 import { revokeSubscription } from "@/lib/admin-users";
 
 export const runtime = "nodejs";
@@ -39,11 +40,19 @@ export async function POST(
     );
   }
 
-  const result = await revokeSubscription(id, auth.admin.id, parsed.data.reason);
+  const supabase = await createClient();
 
-  if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+  try {
+    await revokeSubscription(supabase, {
+      userId: id,
+      adminId: auth.admin.id,
+      reason: parsed.data.reason,
+    });
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Erro desconhecido" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({ success: true });
 }
