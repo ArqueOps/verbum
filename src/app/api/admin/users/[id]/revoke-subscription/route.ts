@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-auth";
 import { revokeSubscription } from "@/lib/admin-users";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,11 +40,17 @@ export async function POST(
     );
   }
 
-  const result = await revokeSubscription(id, auth.admin.id, parsed.data.reason);
+  const supabase = await createServerSupabaseClient();
 
-  if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+  try {
+    await revokeSubscription(supabase, {
+      userId: id,
+      adminId: auth.admin.id,
+      reason: parsed.data.reason,
+    });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro desconhecido";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true });
 }
