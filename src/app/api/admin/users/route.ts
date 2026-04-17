@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { listUsers } from "@/lib/admin-users";
 
 export const runtime = "nodejs";
@@ -23,11 +24,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const result = await listUsers({ search, page, pageSize });
-
-  if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+  try {
+    const supabase = await createServerSupabaseClient();
+    const result = await listUsers(supabase, { search, page, pageSize });
+    return NextResponse.json(result);
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Erro desconhecido" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json(result.data);
 }

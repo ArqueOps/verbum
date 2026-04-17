@@ -38,6 +38,10 @@ export default function RootLayout({
       className={`${cormorantGaramond.variable} ${inter.variable} h-full`}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#1B2A4A" />
+      </head>
       <body className="min-h-full flex flex-col font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <Header />

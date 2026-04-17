@@ -7,14 +7,20 @@ export interface AdminUser {
   role: string;
   created_at: string;
   study_count: number;
-  subscription_status: string | null;
+  subscription_status: "active" | "past_due" | "canceled" | "expired" | null;
   subscription_plan: string | null;
+  plan_label: string;
+  subscription_end: string | null;
+  last_sign_in_at: string | null;
 }
+
+export type AdminUserRow = AdminUser;
 
 export interface ListUsersParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  perPage?: number;
 }
 
 export interface ListUsersResult {
@@ -55,13 +61,14 @@ export async function listUsers(
   supabase: SupabaseClient,
   params: ListUsersParams = {},
 ): Promise<ListUsersResult> {
-  const { search, page = 1, pageSize = 20 } = params;
+  const { search, page = 1, pageSize: explicitPageSize, perPage } = params;
+  const pageSize = explicitPageSize ?? perPage ?? 20;
   const offset = (page - 1) * pageSize;
 
   let query = supabase
     .from("profiles")
     .select(
-      "id, display_name, role, created_at, email:id, studies(count), subscriptions(status, plan_id)",
+      "id, display_name, role, created_at, last_sign_in_at, email:id, studies(count), subscriptions(status, plan_id, current_period_end)",
       { count: "exact" },
     );
 
@@ -84,10 +91,13 @@ export async function listUsers(
     const subscriptions = row.subscriptions as Array<{
       status: string;
       plan_id: string;
+      current_period_end: string | null;
     }> | null;
     const activeSub = subscriptions?.find(
       (s) => s.status === "active" || s.status === "past_due",
     );
+
+    const planLabels: Record<string, string> = { monthly: "Mensal", annual: "Anual" };
 
     return {
       id: row.id as string,
@@ -96,8 +106,11 @@ export async function listUsers(
       role: row.role as string,
       created_at: row.created_at as string,
       study_count: studies?.[0]?.count ?? 0,
-      subscription_status: activeSub?.status ?? null,
+      subscription_status: (activeSub?.status as AdminUser["subscription_status"]) ?? null,
       subscription_plan: activeSub?.plan_id ?? null,
+      plan_label: activeSub ? (planLabels[activeSub.plan_id] ?? activeSub.plan_id) : "—",
+      subscription_end: activeSub?.current_period_end ?? null,
+      last_sign_in_at: (row.last_sign_in_at as string | null) ?? null,
     };
   });
 

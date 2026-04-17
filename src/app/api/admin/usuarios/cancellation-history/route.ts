@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
   }
 
-  const entries = await getCancellationHistory(userId);
+  const entries = await getCancellationHistory(supabase, userId);
 
   return NextResponse.json({ entries });
 }
