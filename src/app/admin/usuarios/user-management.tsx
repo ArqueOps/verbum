@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
-  AlertDialogTrigger,
   AlertDialogPopup,
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogClose,
 } from "@/components/ui/alert-dialog";
-import type { AdminUserRow, CancellationEntry } from "@/lib/admin-users";
+import type { AdminUser, CancellationEntry } from "@/lib/admin-users";
+
+type AdminUserRow = AdminUser;
 import type { ActionResult } from "./actions";
 import {
   grantSubscriptionAction,
@@ -370,18 +371,18 @@ function CancellationHistoryPanel({
                   <span className="text-xs font-medium text-muted-foreground">
                     {formatDateTime(entry.canceled_at)}
                   </span>
-                  {entry.action_type && (
+                  {entry.admin_id && (
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {entry.action_type}
+                      admin
                     </span>
                   )}
                 </div>
                 <p className="text-sm text-foreground">
                   {entry.reason ?? "Sem motivo informado"}
                 </p>
-                {entry.canceled_by && (
+                {entry.admin_id && (
                   <p className="text-xs text-muted-foreground">
-                    Por: {entry.canceled_by}
+                    Por: {entry.admin_id}
                   </p>
                 )}
               </div>
