@@ -43,3 +43,29 @@ export async function canGenerateStudy(
 
   return { allowed: true };
 }
+
+export interface ActiveSubscription {
+  id: string;
+  caramelou_subscription_id: string | null;
+  plan_id: string;
+  status: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+}
+
+export async function getActiveSubscription(
+  userId: string,
+): Promise<ActiveSubscription | null> {
+  const supabase = await createServerSupabaseClient();
+
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("id, caramelou_subscription_id, plan_id, status, current_period_start, current_period_end")
+    .eq("user_id", userId)
+    .in("status", ["active", "past_due"])
+    .order("current_period_end", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data ?? null;
+}
