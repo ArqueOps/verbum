@@ -204,6 +204,7 @@ export type Database = {
           verse_reference: string
           verse_start: number | null
           version_id: number | null
+          view_count: number
         }
         Insert: {
           book_id?: number | null
@@ -224,6 +225,7 @@ export type Database = {
           verse_reference: string
           verse_start?: number | null
           version_id?: number | null
+          view_count?: number
         }
         Update: {
           book_id?: number | null
@@ -244,6 +246,7 @@ export type Database = {
           verse_reference?: string
           verse_start?: number | null
           version_id?: number | null
+          view_count?: number
         }
         Relationships: [
           {
