@@ -1,413 +1,406 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
-interface ListUsersParams {
-  search?: string;
-  page?: number;
-  pageSize?: number;
-}
-
-interface AdminUserRow {
+export type AdminUserRow = {
   id: string;
-  email: string | null;
+  email: string;
   display_name: string | null;
   created_at: string;
-  last_sign_in_at: string | null;
   study_count: number;
-  subscription_status: string;
-  plan_interval: string | null;
-  current_period_end: string | null;
+  plan_label: string;
+  plan_interval: "monthly" | "annual" | null;
+  subscription_end: string | null;
+  subscription_status: "active" | "past_due" | "canceled" | "expired" | null;
+  last_sign_in_at: string | null;
   is_active: boolean;
-}
+};
 
-interface ListUsersResult {
+export type ListUsersResult = {
   users: AdminUserRow[];
   total: number;
-  page: number;
-  pageSize: number;
-}
+};
 
-export async function listUsers(
-  params: ListUsersParams,
-): Promise<{ data: ListUsersResult } | { error: string }> {
+export type CancellationEntry = {
+  id: string;
+  reason: string | null;
+  canceled_at: string;
+  canceled_by: string | null;
+  action_type: string | null;
+};
+
+export async function listUsers(params: {
+  search?: string;
+  page: number;
+  perPage: number;
+}): Promise<ListUsersResult> {
   const supabase = createAdminClient();
-  const page = params.page ?? 1;
-  const pageSize = params.pageSize ?? 20;
-  const offset = (page - 1) * pageSize;
+  const { search, page, perPage } = params;
+  const offset = (page - 1) * perPage;
+
+  const { data: authUsers, error: authError } = await supabase
+    .schema("auth" as never)
+    .from("users")
+    .select("id, email, last_sign_in_at", { count: "exact" })
+    .order("created_at", { ascending: false }) as { data: { id: string; email: string; last_sign_in_at: string | null }[] | null; error: unknown; count: number | null };
+
+  if (authError || !authUsers) {
+    return { users: [], total: 0 };
+  }
 
   let profileQuery = supabase
     .from("profiles")
-    .select("id, display_name, is_active, created_at, role", { count: "exact" });
+    .select("id, display_name, created_at, role", { count: "exact" });
 
-  if (params.search) {
-    profileQuery = profileQuery.ilike("display_name", `%${params.search}%`);
+  if (search) {
+    const term = `%${search}%`;
+    profileQuery = profileQuery.or(`display_name.ilike.${term}`);
   }
 
-  profileQuery = profileQuery
+  const { data: profiles, count: totalCount, error: profileError } = await profileQuery
     .order("created_at", { ascending: false })
-    .range(offset, offset + pageSize - 1);
+    .range(offset, offset + perPage - 1);
 
-  const { data: profiles, count: totalCount, error: profileError } =
-    await profileQuery;
-
-  if (profileError) {
-    return { error: profileError.message };
+  if (profileError || !profiles) {
+    return { users: [], total: 0 };
   }
 
-  if (!profiles || profiles.length === 0) {
-    if (params.search) {
-      const { data: authResult } = await supabase.auth.admin.listUsers({
-        page: 1,
-        perPage: pageSize,
-      });
+  const userIds = profiles.map((p: { id: string }) => p.id);
 
-      const emailMatches = (authResult?.users ?? []).filter((u) =>
-        u.email?.toLowerCase().includes(params.search!.toLowerCase()),
-      );
-
-      if (emailMatches.length === 0) {
-        return { data: { users: [], total: 0, page, pageSize } };
-      }
-
-      const matchedIds = emailMatches.map((u) => u.id);
-      const { data: matchedProfiles } = await supabase
-        .from("profiles")
-        .select("id, display_name, is_active, created_at, role")
-        .in("id", matchedIds);
-
-      return buildUserRows(
-        supabase,
-        matchedProfiles ?? [],
-        emailMatches,
-        emailMatches.length,
-        page,
-        pageSize,
-      );
-    }
-
-    return { data: { users: [], total: 0, page, pageSize } };
+  if (userIds.length === 0) {
+    return { users: [], total: totalCount ?? 0 };
   }
 
-  const userIds = profiles.map((p) => p.id);
-
-  const { data: authResult } = await supabase.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
-
-  const authUsers = (authResult?.users ?? []).filter((u) =>
-    userIds.includes(u.id),
-  );
-
-  return buildUserRows(
-    supabase,
-    profiles,
-    authUsers,
-    totalCount ?? profiles.length,
-    page,
-    pageSize,
-  );
-}
-
-async function buildUserRows(
-  supabase: ReturnType<typeof createAdminClient>,
-  profiles: Array<{
-    id: string;
-    display_name: string | null;
-    is_active: boolean;
-    created_at: string;
-    role: string;
-  }>,
-  authUsers: Array<{
-    id: string;
-    email?: string;
-    last_sign_in_at?: string;
-    created_at?: string;
-  }>,
-  total: number,
-  page: number,
-  pageSize: number,
-): Promise<{ data: ListUsersResult }> {
-  const userIds = profiles.map((p) => p.id);
-
-  const { data: subscriptions } = await supabase
-    .from("subscriptions")
-    .select("user_id, status, plan_interval, current_period_end")
-    .in("user_id", userIds)
-    .in("status", ["active", "past_due"]);
-
-  const subMap = new Map(
-    (subscriptions ?? []).map((s) => [s.user_id, s]),
-  );
-
-  const { data: studies } = await supabase
-    .from("studies")
-    .select("owner_id")
-    .in("owner_id", userIds);
+  const [studyCounts, subscriptions, filteredAuthUsers] = await Promise.all([
+    supabase
+      .from("studies")
+      .select("owner_id")
+      .in("owner_id", userIds),
+    supabase
+      .from("subscriptions")
+      .select("user_id, status, plan_id, plan_interval, current_period_end")
+      .in("user_id", userIds),
+    Promise.resolve(
+      authUsers.filter((u: { id: string }) => userIds.includes(u.id))
+    ),
+  ]);
 
   const studyCountMap = new Map<string, number>();
-  for (const s of studies ?? []) {
-    studyCountMap.set(s.owner_id, (studyCountMap.get(s.owner_id) ?? 0) + 1);
+  if (studyCounts.data) {
+    for (const s of studyCounts.data) {
+      const ownerId = (s as { owner_id: string }).owner_id;
+      studyCountMap.set(ownerId, (studyCountMap.get(ownerId) ?? 0) + 1);
+    }
   }
 
-  const authMap = new Map(authUsers.map((u) => [u.id, u]));
-  const profileMap = new Map(profiles.map((p) => [p.id, p]));
+  const subscriptionMap = new Map<string, {
+    status: "active" | "past_due" | "canceled" | "expired";
+    plan_id: string;
+    plan_interval: "monthly" | "annual" | null;
+    current_period_end: string | null;
+  }>();
+  if (subscriptions.data) {
+    for (const sub of subscriptions.data) {
+      const s = sub as { user_id: string; status: "active" | "past_due" | "canceled" | "expired"; plan_id: string; plan_interval: "monthly" | "annual" | null; current_period_end: string | null };
+      subscriptionMap.set(s.user_id, s);
+    }
+  }
 
-  const users: AdminUserRow[] = userIds.map((uid) => {
-    const authUser = authMap.get(uid);
-    const profile = profileMap.get(uid)!;
-    const sub = subMap.get(uid);
+  const authMap = new Map<string, { email: string; last_sign_in_at: string | null }>();
+  for (const u of filteredAuthUsers) {
+    authMap.set(u.id, { email: u.email, last_sign_in_at: u.last_sign_in_at });
+  }
+
+  let emailFilteredIds: Set<string> | null = null;
+  if (search) {
+    const term = search.toLowerCase();
+    emailFilteredIds = new Set<string>();
+    for (const u of authUsers) {
+      if (u.email?.toLowerCase().includes(term)) {
+        emailFilteredIds.add(u.id);
+      }
+    }
+  }
+
+  const users: AdminUserRow[] = profiles.map((p: { id: string; display_name: string | null; created_at: string; role: string }) => {
+    const auth = authMap.get(p.id);
+    const sub = subscriptionMap.get(p.id);
+
+    let planLabel = "Free";
+    if (sub?.status === "active") {
+      planLabel = sub.plan_interval === "annual" ? "Anual" : "Mensal";
+    }
 
     return {
-      id: uid,
-      email: authUser?.email ?? null,
-      display_name: profile.display_name,
-      created_at: profile.created_at,
-      last_sign_in_at: authUser?.last_sign_in_at ?? null,
-      study_count: studyCountMap.get(uid) ?? 0,
-      subscription_status: sub?.status ?? "free",
+      id: p.id,
+      email: auth?.email ?? "",
+      display_name: p.display_name,
+      created_at: p.created_at,
+      study_count: studyCountMap.get(p.id) ?? 0,
+      plan_label: planLabel,
       plan_interval: sub?.plan_interval ?? null,
-      current_period_end: sub?.current_period_end ?? null,
-      is_active: profile.is_active,
+      subscription_end: sub?.current_period_end ?? null,
+      subscription_status: sub?.status ?? null,
+      last_sign_in_at: auth?.last_sign_in_at ?? null,
+      is_active: p.role !== "admin",
     };
   });
 
-  return { data: { users, total, page, pageSize } };
+  if (search && emailFilteredIds) {
+    const profileIds = new Set(profiles.map((p: { id: string }) => p.id));
+    const emailOnlyUsers: AdminUserRow[] = [];
+
+    for (const uid of emailFilteredIds) {
+      if (!profileIds.has(uid)) {
+        const authUser = authUsers.find((u: { id: string }) => u.id === uid);
+        if (authUser) {
+          const { data: extraProfile } = await supabase
+            .from("profiles")
+            .select("id, display_name, created_at, role")
+            .eq("id", uid)
+            .maybeSingle();
+
+          if (extraProfile) {
+            const sub = subscriptionMap.get(uid);
+            let planLabel = "Free";
+            if (sub?.status === "active") {
+              planLabel = sub.plan_interval === "annual" ? "Anual" : "Mensal";
+            }
+            emailOnlyUsers.push({
+              id: uid,
+              email: authUser.email,
+              display_name: (extraProfile as { display_name: string | null }).display_name,
+              created_at: (extraProfile as { created_at: string }).created_at,
+              study_count: studyCountMap.get(uid) ?? 0,
+              plan_label: planLabel,
+              plan_interval: sub?.plan_interval ?? null,
+              subscription_end: sub?.current_period_end ?? null,
+              subscription_status: sub?.status ?? null,
+              last_sign_in_at: authUser.last_sign_in_at,
+              is_active: true,
+            });
+          }
+        }
+      }
+    }
+
+    return {
+      users: [...users, ...emailOnlyUsers],
+      total: (totalCount ?? 0) + emailOnlyUsers.length,
+    };
+  }
+
+  return { users, total: totalCount ?? 0 };
 }
 
-export async function grantSubscription(
-  userId: string,
-  adminId: string,
-  planInterval: "monthly" | "annual",
-  periodMonths: number,
-): Promise<{ success: true } | { error: string }> {
+export async function grantSubscription(params: {
+  userId: string;
+  planInterval: "monthly" | "annual";
+  periodMonths: number;
+  performedBy: string;
+}): Promise<{ success: boolean; error?: string }> {
   const supabase = createAdminClient();
-
-  const periodEnd = new Date();
-  periodEnd.setMonth(periodEnd.getMonth() + periodMonths);
+  const { userId, planInterval, periodMonths, performedBy } = params;
 
   const { data: existing } = await supabase
     .from("subscriptions")
-    .select("id")
+    .select("id, status")
     .eq("user_id", userId)
-    .limit(1)
+    .in("status", ["active"])
     .maybeSingle();
 
   if (existing) {
-    const { error } = await supabase
-      .from("subscriptions")
-      .update({
-        status: "active",
-        plan_interval: planInterval,
-        plan_id: `admin_${planInterval}`,
-        current_period_start: new Date().toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        canceled_at: null,
-        cancellation_reason: null,
-      })
-      .eq("id", existing.id);
-
-    if (error) return { error: error.message };
-  } else {
-    const { error } = await supabase.from("subscriptions").insert({
-      user_id: userId,
-      status: "active",
-      plan_id: `admin_${planInterval}`,
-      plan_interval: planInterval,
-      current_period_start: new Date().toISOString(),
-      current_period_end: periodEnd.toISOString(),
-    });
-
-    if (error) return { error: error.message };
+    return { success: false, error: "Usuário já possui assinatura ativa." };
   }
 
-  const { error: roleError } = await supabase
-    .from("profiles")
-    .update({ role: "premium" })
-    .eq("id", userId);
+  const now = new Date();
+  const end = new Date(now);
+  end.setMonth(end.getMonth() + periodMonths);
 
-  if (roleError) return { error: roleError.message };
-
-  const { error: logError } = await supabase
-    .from("subscription_admin_actions")
-    .insert({
+  const { data: subscription, error: subError } = await supabase
+    .from("subscriptions")
+    .upsert({
       user_id: userId,
-      admin_id: adminId,
-      action_type: "grant",
-      metadata: { plan_interval: planInterval, period_months: periodMonths },
-    });
+      status: "active" as const,
+      plan_id: planInterval,
+      plan_interval: planInterval,
+      current_period_start: now.toISOString(),
+      current_period_end: end.toISOString(),
+    }, { onConflict: "user_id" })
+    .select("id")
+    .single();
 
-  if (logError) return { error: logError.message };
+  if (subError) {
+    return { success: false, error: `Erro ao criar assinatura: ${subError.message}` };
+  }
+
+  await supabase.from("subscription_admin_actions").insert({
+    subscription_id: subscription?.id ?? null,
+    user_id: userId,
+    action_type: "grant" as const,
+    plan_interval: planInterval,
+    period_months: periodMonths,
+    performed_by: performedBy,
+  });
+
+  await supabase
+    .from("user_credits")
+    .upsert({
+      user_id: userId,
+      has_active_subscription: true,
+      subscription_end: end.toISOString(),
+    }, { onConflict: "user_id" });
 
   return { success: true };
 }
 
-export async function revokeSubscription(
-  userId: string,
-  adminId: string,
-  reason: string,
-): Promise<{ success: true } | { error: string }> {
+export async function revokeSubscription(params: {
+  userId: string;
+  reason: string;
+  performedBy: string;
+}): Promise<{ success: boolean; error?: string }> {
   const supabase = createAdminClient();
+  const { userId, reason, performedBy } = params;
 
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("id")
     .eq("user_id", userId)
-    .in("status", ["active", "past_due"])
-    .limit(1)
+    .in("status", ["active"])
     .maybeSingle();
 
   if (!subscription) {
-    return { error: "Nenhuma assinatura ativa encontrada" };
+    return { success: false, error: "Nenhuma assinatura ativa encontrada." };
   }
 
-  const { error } = await supabase
+  const now = new Date().toISOString();
+
+  await supabase
     .from("subscriptions")
     .update({
-      status: "canceled",
-      canceled_at: new Date().toISOString(),
+      status: "canceled" as const,
+      canceled_at: now,
       cancellation_reason: reason,
     })
     .eq("id", subscription.id);
 
-  if (error) return { error: error.message };
+  await supabase.from("subscription_admin_actions").insert({
+    subscription_id: subscription.id,
+    user_id: userId,
+    action_type: "revoke" as const,
+    reason,
+    performed_by: performedBy,
+  });
 
-  const { error: roleError } = await supabase
-    .from("profiles")
-    .update({ role: "free" })
-    .eq("id", userId);
+  await supabase.from("subscription_cancellations").insert({
+    user_id: userId,
+    subscription_id: subscription.id,
+    reason,
+    canceled_at: now,
+    canceled_by: performedBy,
+    action_type: "admin_revoke",
+  });
 
-  if (roleError) return { error: roleError.message };
-
-  const { error: logError } = await supabase
-    .from("subscription_admin_actions")
-    .insert({
-      user_id: userId,
-      admin_id: adminId,
-      action_type: "revoke",
-      reason,
-    });
-
-  if (logError) return { error: logError.message };
+  await supabase
+    .from("user_credits")
+    .update({
+      has_active_subscription: false,
+      subscription_end: null,
+    })
+    .eq("user_id", userId);
 
   return { success: true };
 }
 
-export async function extendSubscription(
-  userId: string,
-  adminId: string,
-  days: number,
-): Promise<{ success: true } | { error: string }> {
+export async function extendSubscription(params: {
+  userId: string;
+  days: number;
+  performedBy: string;
+}): Promise<{ success: boolean; error?: string }> {
   const supabase = createAdminClient();
+  const { userId, days, performedBy } = params;
 
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("id, current_period_end")
     .eq("user_id", userId)
-    .in("status", ["active", "past_due"])
-    .limit(1)
+    .in("status", ["active"])
     .maybeSingle();
 
   if (!subscription) {
-    return { error: "Nenhuma assinatura ativa encontrada" };
+    return { success: false, error: "Nenhuma assinatura ativa encontrada." };
   }
 
-  const currentEnd = new Date(subscription.current_period_end);
+  const currentEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end)
+    : new Date();
   currentEnd.setDate(currentEnd.getDate() + days);
 
-  const { error } = await supabase
+  await supabase
     .from("subscriptions")
     .update({ current_period_end: currentEnd.toISOString() })
     .eq("id", subscription.id);
 
-  if (error) return { error: error.message };
+  await supabase.from("subscription_admin_actions").insert({
+    subscription_id: subscription.id,
+    user_id: userId,
+    action_type: "extend" as const,
+    extend_days: days,
+    performed_by: performedBy,
+  });
 
-  const { error: logError } = await supabase
-    .from("subscription_admin_actions")
-    .insert({
-      user_id: userId,
-      admin_id: adminId,
-      action_type: "extend",
-      metadata: { extend_days: days },
-    });
-
-  if (logError) return { error: logError.message };
+  await supabase
+    .from("user_credits")
+    .update({ subscription_end: currentEnd.toISOString() })
+    .eq("user_id", userId);
 
   return { success: true };
 }
 
-export async function deactivateAccount(
-  userId: string,
-): Promise<{ success: true } | { error: string }> {
+export async function deactivateAccount(params: {
+  userId: string;
+  performedBy: string;
+}): Promise<{ success: boolean; error?: string }> {
   const supabase = createAdminClient();
+  const { userId, performedBy } = params;
 
   const { error } = await supabase
     .from("profiles")
-    .update({ is_active: false })
+    .update({ role: "free" as const })
     .eq("id", userId);
 
-  if (error) return { error: error.message };
+  if (error) {
+    return { success: false, error: `Erro ao desativar conta: ${error.message}` };
+  }
+
+  const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
+    ban_duration: "876000h",
+  });
+
+  if (authError) {
+    return { success: false, error: `Erro ao banir usuário: ${authError.message}` };
+  }
+
+  await supabase.from("subscription_admin_actions").insert({
+    user_id: userId,
+    action_type: "revoke" as const,
+    reason: "Conta desativada pelo administrador",
+    performed_by: performedBy,
+  });
 
   return { success: true };
-}
-
-interface CancellationRecord {
-  type: "admin_revoke" | "subscription_canceled";
-  reason: string | null;
-  metadata: Record<string, unknown>;
-  occurred_at: string;
 }
 
 export async function getCancellationHistory(
   userId: string,
-): Promise<{ data: CancellationRecord[] } | { error: string }> {
+): Promise<CancellationEntry[]> {
   const supabase = createAdminClient();
 
-  const { data: adminActions, error: actionsError } = await supabase
-    .from("subscription_admin_actions")
-    .select("id, action_type, reason, metadata, created_at")
+  const { data } = await supabase
+    .from("subscription_cancellations")
+    .select("id, reason, canceled_at, canceled_by, action_type")
     .eq("user_id", userId)
-    .eq("action_type", "revoke")
-    .order("created_at", { ascending: true });
+    .order("canceled_at", { ascending: false });
 
-  if (actionsError) return { error: actionsError.message };
+  if (!data) return [];
 
-  const { data: canceledSubs, error: subsError } = await supabase
-    .from("subscriptions")
-    .select("id, canceled_at, cancellation_reason, plan_id, plan_interval")
-    .eq("user_id", userId)
-    .not("canceled_at", "is", null)
-    .order("canceled_at", { ascending: true });
-
-  if (subsError) return { error: subsError.message };
-
-  const records: CancellationRecord[] = [];
-
-  for (const action of adminActions ?? []) {
-    records.push({
-      type: "admin_revoke",
-      reason: action.reason,
-      metadata: action.metadata as Record<string, unknown>,
-      occurred_at: action.created_at,
-    });
-  }
-
-  for (const sub of canceledSubs ?? []) {
-    records.push({
-      type: "subscription_canceled",
-      reason: sub.cancellation_reason,
-      metadata: {
-        subscription_id: sub.id,
-        plan_id: sub.plan_id,
-        plan_interval: sub.plan_interval,
-      },
-      occurred_at: sub.canceled_at!,
-    });
-  }
-
-  records.sort(
-    (a, b) =>
-      new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
-  );
-
-  return { data: records };
+  return data as CancellationEntry[];
 }

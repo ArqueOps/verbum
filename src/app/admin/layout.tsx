@@ -1,12 +1,18 @@
 import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient as createClient } from "@/lib/supabase/server";
+
+export const metadata = {
+  title: "Admin — Verbum",
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
