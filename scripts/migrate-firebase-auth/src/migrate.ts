@@ -2,8 +2,7 @@ import { cert, initializeApp } from "firebase-admin/app";
 import { getAuth, type UserRecord } from "firebase-admin/auth";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
-
-// --- Types ---
+import { randomUUID } from "node:crypto";
 
 type SupportedProvider = "password" | "google.com" | "apple.com";
 
@@ -22,8 +21,6 @@ interface MigrationReport {
   needsReRegister: Array<{ email: string; displayName: string | undefined }>;
 }
 
-// --- Environment ---
-
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -31,8 +28,6 @@ function requireEnv(name: string): string {
   }
   return value;
 }
-
-// --- Firebase setup ---
 
 function initFirebase(): void {
   const serviceAccountPath = requireEnv("FIREBASE_SERVICE_ACCOUNT_PATH");
@@ -54,8 +49,6 @@ async function fetchAllFirebaseUsers(): Promise<UserRecord[]> {
   return users;
 }
 
-// --- Supabase setup ---
-
 function createSupabaseAdmin(): SupabaseClient {
   const url = requireEnv("SUPABASE_URL");
   const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
@@ -63,8 +56,6 @@ function createSupabaseAdmin(): SupabaseClient {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
-
-// --- Migration logic ---
 
 function getPrimaryProvider(user: UserRecord): string | null {
   if (!user.providerData || user.providerData.length === 0) {
@@ -128,11 +119,11 @@ async function insertOAuthIdentity(
   const now = new Date().toISOString();
 
   const { error } = await supabase.rpc("insert_oauth_identity", {
-    p_id: providerUserId,
+    p_id: randomUUID(),
     p_user_id: supabaseUserId,
     p_provider_id: providerUserId,
     p_provider: providerName,
-    p_identity_data: { sub: providerUserId, email, email_verified: true },
+    p_identity_data: { sub: providerUserId, email, email_verified: true, provider_id: providerName },
     p_timestamp: now,
   });
 
@@ -161,7 +152,7 @@ async function migrateUser(
       email,
       email_confirm: true,
       user_metadata: {
-        display_name: user.displayName ?? "",
+        full_name: user.displayName ?? "",
         avatar_url: user.photoURL ?? "",
         firebase_uid: user.uid,
       },
@@ -182,12 +173,12 @@ async function migrateUser(
 
     const supabaseUserId = authUser.user.id;
 
-    // Update profile with firebase_uid (trigger auto-creates the profile row)
     const { error: profileError } = await supabase
       .from("profiles")
       .update({
         display_name: user.displayName ?? null,
         avatar_url: user.photoURL ?? null,
+        role: "free",
         firebase_uid: user.uid,
       })
       .eq("id", supabaseUserId);
@@ -196,7 +187,6 @@ async function migrateUser(
       console.warn(`  [WARN] Profile update failed for ${email}: ${profileError.message}`);
     }
 
-    // Insert OAuth identity for Google/Apple providers
     if (provider === "google.com" || provider === "apple.com") {
       const providerUid = getOAuthProviderId(user, provider);
       if (providerUid) {
@@ -204,7 +194,6 @@ async function migrateUser(
       }
     }
 
-    // Verify the user was created
     const { data: verifyData, error: verifyError } =
       await supabase.auth.admin.getUserById(supabaseUserId);
 
@@ -224,24 +213,20 @@ async function migrateUser(
 async function run(): Promise<void> {
   console.log("=== Firebase Auth → Supabase Auth Migration ===\n");
 
-  // Initialize services
   console.log("Initializing Firebase Admin SDK...");
   initFirebase();
 
   console.log("Initializing Supabase Admin client...\n");
   const supabase = createSupabaseAdmin();
 
-  // Fetch all Firebase users
   console.log("Fetching all Firebase Auth users...");
   const firebaseUsers = await fetchAllFirebaseUsers();
   console.log(`Found ${firebaseUsers.length} Firebase users.\n`);
 
-  // Load already-migrated UIDs for idempotency
   console.log("Loading already-migrated users from profiles.firebase_uid...");
   const alreadyMigrated = await getAlreadyMigratedUids(supabase);
   console.log(`Found ${alreadyMigrated.size} already-migrated users.\n`);
 
-  // Initialize report
   const report: MigrationReport = {
     totalProcessed: firebaseUsers.length,
     successByProvider: {},
@@ -250,23 +235,19 @@ async function run(): Promise<void> {
     needsReRegister: [],
   };
 
-  // Process each user
   console.log("Processing users...\n");
 
   for (const user of firebaseUsers) {
-    // Skip anonymous users
     if (isAnonymous(user)) {
       report.skipped.anonymous++;
       continue;
     }
 
-    // Skip users without email
     if (!user.email) {
       report.skipped.noEmail++;
       continue;
     }
 
-    // Skip already-migrated users (idempotency)
     if (alreadyMigrated.has(user.uid)) {
       console.log(`  [SKIP] Already migrated: ${user.email}`);
       report.skipped.alreadyMigrated++;
@@ -275,7 +256,6 @@ async function run(): Promise<void> {
 
     const provider = getPrimaryProvider(user);
 
-    // GitHub users → needs re-register
     if (provider === "github.com") {
       console.log(`  [NEEDS RE-REGISTER] GitHub user: ${user.email}`);
       report.needsReRegister.push({
@@ -285,7 +265,6 @@ async function run(): Promise<void> {
       continue;
     }
 
-    // Unsupported/unknown providers → skip
     if (!provider || !SUPPORTED_PROVIDERS.has(provider)) {
       report.skipped.noEmail++;
       continue;
@@ -294,7 +273,6 @@ async function run(): Promise<void> {
     await migrateUser(supabase, user, provider as SupportedProvider, report);
   }
 
-  // Print final report
   printReport(report);
 }
 
