@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { listUsers } from "@/lib/admin-users";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { UserManagement } from "./user-management";
 
 export const metadata = {
