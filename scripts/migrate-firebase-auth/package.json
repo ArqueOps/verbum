@@ -1,0 +1,15 @@
+{
+  "name": "migrate-firebase-auth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "migrate": "npx tsx src/migrate.ts",
+    "migrate:dry-run": "DRY_RUN=true npx tsx src/migrate.ts"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.4",
+    "typescript": "^5"
+  }
+}
