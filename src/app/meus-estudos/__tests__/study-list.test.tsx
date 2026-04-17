@@ -157,6 +157,9 @@ vi.mock("lucide-react", () => ({
   BookOpen: ({ className }: { className?: string }) => (
     <svg data-testid="book-open-icon" className={className} />
   ),
+  Eye: ({ className }: { className?: string }) => (
+    <svg data-testid="eye-icon" className={className} />
+  ),
   Trash2: ({ className }: { className?: string }) => (
     <svg data-testid="trash-icon" className={className} />
   ),
@@ -191,6 +194,7 @@ const mockStudies = [
     created_at: "2026-04-10T12:00:00Z",
     slug: "estudo-sobre-genesis",
     is_published: false,
+    view_count: 0,
   },
   {
     id: "study-2",
@@ -199,6 +203,7 @@ const mockStudies = [
     created_at: "2026-04-12T14:00:00Z",
     slug: "salmos-de-davi",
     is_published: true,
+    view_count: 42,
   },
 ];
 

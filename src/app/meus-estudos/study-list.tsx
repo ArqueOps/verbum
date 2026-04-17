@@ -22,6 +22,7 @@ interface Study {
   created_at: string;
   slug: string;
   is_published: boolean;
+  view_count: number;
 }
 
 interface StudyListProps {
@@ -121,6 +122,7 @@ export function StudyList({ studies: initialStudies }: StudyListProps) {
               handleTogglePublish(study.id, study.is_published)
             }
             publishLoading={publishingId === study.id}
+            viewCount={study.view_count}
             href={`/estudos/${study.slug}`}
           />
           <div className="absolute right-2 top-2 z-20">

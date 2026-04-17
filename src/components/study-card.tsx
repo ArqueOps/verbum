@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Globe, GlobeLock, Loader2, Star } from "lucide-react";
+import { Eye, Globe, GlobeLock, Loader2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StudyCardProps {
@@ -17,6 +17,7 @@ interface StudyCardProps {
   onToggleFavorite?: () => void;
   onTogglePublish?: () => void;
   publishLoading?: boolean;
+  viewCount?: number;
   href: string;
 }
 
@@ -53,6 +54,7 @@ export function StudyCard({
   onToggleFavorite,
   onTogglePublish,
   publishLoading,
+  viewCount,
   href,
 }: StudyCardProps) {
   const passage =
@@ -95,9 +97,17 @@ export function StudyCard({
       </h3>
 
       <div className="mt-auto flex items-center justify-between">
-        <time className="text-xs text-muted-foreground" dateTime={createdAt}>
-          {formattedDate}
-        </time>
+        <div className="flex items-center gap-3">
+          <time className="text-xs text-muted-foreground" dateTime={createdAt}>
+            {formattedDate}
+          </time>
+          {viewCount != null && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Eye className="size-3" />
+              {viewCount.toLocaleString("pt-BR")} {viewCount === 1 ? "visualização" : "visualizações"}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1.5">
           {onTogglePublish && (
             <button
