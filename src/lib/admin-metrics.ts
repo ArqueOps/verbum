@@ -1,27 +1,20 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface AdminMetrics {
-  totalUsers: number;
-  freeUsers: number;
-  monthlySubscribers: number;
-  annualSubscribers: number;
-  activeSubscribersMonthly: number;
-  activeSubscribersAnnual: number;
+  totalStudies: number;
+  totalSubscribers: number;
   mrr: number;
   arr: number;
   churnRate: number;
-  studiesToday: number;
-  studiesThisWeek: number;
-  studiesThisMonth: number;
-  publishedStudies: number;
+  topUsers: Array<{ displayName: string; count: number }>;
 }
 
-export interface DailyStudyCount {
+export interface StudiesPerDay {
   date: string;
   count: number;
 }
 
-export interface DailySubscriberCount {
+export interface SubscribersPerDay {
   date: string;
   count: number;
 }
@@ -29,240 +22,176 @@ export interface DailySubscriberCount {
 export interface CancellationReason {
   reason: string;
   count: number;
+  percentage: number;
 }
 
-export interface TopUserByStudies {
-  userId: string;
-  displayName: string;
-  studyCount: number;
+const MONTHLY_PRICE = 19.9;
+const ANNUAL_PRICE = 199;
+
+function getDateFilter(period: "today" | "week" | "month"): string {
+  const now = new Date();
+  now.setUTCHours(0, 0, 0, 0);
+
+  if (period === "week") {
+    now.setUTCDate(now.getUTCDate() - 7);
+  } else if (period === "month") {
+    now.setUTCDate(now.getUTCDate() - 30);
+  }
+
+  return now.toISOString();
 }
 
-function startOfDay(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
+export async function getAdminMetrics(
+  period: "today" | "week" | "month" = "month",
+): Promise<AdminMetrics> {
+  const supabase = createAdminClient();
+  const since = getDateFilter(period);
 
-function startOfWeek(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - d.getDay());
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-function startOfMonth(): string {
-  const d = new Date();
-  d.setDate(1);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-function thirtyDaysAgo(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 30);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-export async function getAdminMetrics(): Promise<AdminMetrics> {
-  const supabase = await createServerSupabaseClient();
-
-  const [profilesResult, studiesResult, subscriptionsResult] =
+  const [studiesResult, subscribersResult, monthlyResult, annualResult, canceledResult, topUsersResult] =
     await Promise.all([
-      supabase.from("profiles").select("id, role"),
-      supabase.from("studies").select("id, created_at, is_published"),
+      supabase
+        .from("studies")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", since),
+
       supabase
         .from("subscriptions")
-        .select("id, plan_id, status, canceled_at"),
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active"),
+
+      supabase
+        .from("subscriptions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+        .eq("plan_id", "monthly"),
+
+      supabase
+        .from("subscriptions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+        .eq("plan_id", "annual"),
+
+      supabase
+        .from("subscriptions")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["canceled", "expired"])
+        .gte("updated_at", since),
+
+      supabase
+        .from("studies")
+        .select("owner_id, profiles(display_name)")
+        .gte("created_at", since),
     ]);
 
-  const profiles = profilesResult.data ?? [];
-  const studies = studiesResult.data ?? [];
-  const subscriptions = subscriptionsResult.data ?? [];
+  const totalStudies = studiesResult.count ?? 0;
+  const totalSubscribers = subscribersResult.count ?? 0;
+  const monthlyCount = monthlyResult.count ?? 0;
+  const annualCount = annualResult.count ?? 0;
+  const canceledCount = canceledResult.count ?? 0;
 
-  const totalUsers = profiles.length;
-  const freeUsers = profiles.filter(
-    (p) => p.role === "free" || !p.role
-  ).length;
-
-  const activeSubscriptions = subscriptions.filter(
-    (s) => s.status === "active"
-  );
-  const monthlySubscribers = activeSubscriptions.filter((s) =>
-    s.plan_id?.includes("monthly")
-  ).length;
-  const annualSubscribers = activeSubscriptions.filter((s) =>
-    s.plan_id?.includes("annual")
-  ).length;
-
-  const monthlyPrice = 29.9;
-  const annualMonthlyEquivalent = 24.9;
-  const mrr =
-    monthlySubscribers * monthlyPrice +
-    annualSubscribers * annualMonthlyEquivalent;
+  const mrr = monthlyCount * MONTHLY_PRICE + annualCount * (ANNUAL_PRICE / 12);
   const arr = mrr * 12;
 
-  const canceledCount = subscriptions.filter((s) => s.canceled_at).length;
-  const totalEverActive = subscriptions.length;
-  const churnRate =
-    totalEverActive > 0
-      ? Math.round((canceledCount / totalEverActive) * 100 * 10) / 10
-      : 0;
+  const totalAtStart = totalSubscribers + canceledCount;
+  const churnRate = totalAtStart > 0 ? canceledCount / totalAtStart : 0;
 
-  const todayStart = startOfDay();
-  const weekStart = startOfWeek();
-  const monthStart = startOfMonth();
+  const userMap = new Map<string, { displayName: string; count: number }>();
+  const rows = (topUsersResult.data ?? []) as unknown as Array<{
+    owner_id: string;
+    profiles: { display_name: string | null } | null;
+  }>;
+  for (const row of rows) {
+    const key = row.owner_id;
+    const existing = userMap.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      userMap.set(key, {
+        displayName: row.profiles?.display_name ?? "Usuário",
+        count: 1,
+      });
+    }
+  }
 
-  const studiesToday = studies.filter(
-    (s) => s.created_at >= todayStart
-  ).length;
-  const studiesThisWeek = studies.filter(
-    (s) => s.created_at >= weekStart
-  ).length;
-  const studiesThisMonth = studies.filter(
-    (s) => s.created_at >= monthStart
-  ).length;
-  const publishedStudies = studies.filter((s) => s.is_published).length;
+  const topUsers = [...userMap.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
 
-  return {
-    totalUsers,
-    freeUsers,
-    monthlySubscribers,
-    annualSubscribers,
-    activeSubscribersMonthly: monthlySubscribers,
-    activeSubscribersAnnual: annualSubscribers,
-    mrr,
-    arr,
-    churnRate,
-    studiesToday,
-    studiesThisWeek,
-    studiesThisMonth,
-    publishedStudies,
-  };
+  return { totalStudies, totalSubscribers, mrr, arr, churnRate, topUsers };
 }
 
-export async function getStudiesPerDay(): Promise<DailyStudyCount[]> {
-  const supabase = await createServerSupabaseClient();
-  const since = thirtyDaysAgo();
+export async function getStudiesPerDay(
+  days = 30,
+): Promise<StudiesPerDay[]> {
+  const supabase = createAdminClient();
+  const since = new Date();
+  since.setUTCHours(0, 0, 0, 0);
+  since.setUTCDate(since.getUTCDate() - days);
 
-  const { data: studies } = await supabase
+  const { data } = await supabase
     .from("studies")
     .select("created_at")
-    .gte("created_at", since)
+    .gte("created_at", since.toISOString())
     .order("created_at", { ascending: true });
 
-  const countsByDate = new Map<string, number>();
-  const start = new Date(since);
-  const today = new Date();
-  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
-    countsByDate.set(d.toISOString().slice(0, 10), 0);
+  const dayMap = new Map<string, number>();
+  for (const row of data ?? []) {
+    const date = (row as { created_at: string }).created_at.slice(0, 10);
+    dayMap.set(date, (dayMap.get(date) ?? 0) + 1);
   }
 
-  for (const study of studies ?? []) {
-    const dateKey = study.created_at.slice(0, 10);
-    countsByDate.set(dateKey, (countsByDate.get(dateKey) ?? 0) + 1);
-  }
-
-  return Array.from(countsByDate.entries()).map(([date, count]) => ({
-    date,
-    count,
-  }));
+  return [...dayMap.entries()].map(([date, count]) => ({ date, count }));
 }
 
-export async function getSubscribersPerDay(): Promise<DailySubscriberCount[]> {
-  const supabase = await createServerSupabaseClient();
-  const since = thirtyDaysAgo();
+export async function getSubscribersPerDay(
+  days = 30,
+): Promise<SubscribersPerDay[]> {
+  const supabase = createAdminClient();
+  const since = new Date();
+  since.setUTCHours(0, 0, 0, 0);
+  since.setUTCDate(since.getUTCDate() - days);
 
-  const { data: subscriptions } = await supabase
+  const { data } = await supabase
     .from("subscriptions")
-    .select("created_at, status, canceled_at")
+    .select("created_at")
+    .eq("status", "active")
+    .gte("created_at", since.toISOString())
     .order("created_at", { ascending: true });
 
-  const allSubs = subscriptions ?? [];
-  const result: DailySubscriberCount[] = [];
-  const start = new Date(since);
-  const today = new Date();
-
-  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().slice(0, 10);
-    const activeThatDay = allSubs.filter((s) => {
-      const createdDate = s.created_at.slice(0, 10);
-      if (createdDate > dateStr) return false;
-      if (s.canceled_at && s.canceled_at.slice(0, 10) <= dateStr) return false;
-      return true;
-    });
-    result.push({ date: dateStr, count: activeThatDay.length });
+  const dayMap = new Map<string, number>();
+  for (const row of data ?? []) {
+    const date = (row as { created_at: string }).created_at.slice(0, 10);
+    dayMap.set(date, (dayMap.get(date) ?? 0) + 1);
   }
 
-  return result;
+  return [...dayMap.entries()].map(([date, count]) => ({ date, count }));
 }
 
 export async function getCancellationReasons(): Promise<CancellationReason[]> {
-  const supabase = await createServerSupabaseClient();
-  const since = thirtyDaysAgo();
+  const supabase = createAdminClient();
 
-  const { data: canceled } = await supabase
-    .from("subscriptions")
-    .select("plan_id, canceled_at")
-    .not("canceled_at", "is", null)
-    .gte("canceled_at", since);
+  const { data } = await supabase
+    .from("webhook_events")
+    .select("payload")
+    .eq("event_type", "subscription.canceled");
 
-  if (!canceled || canceled.length === 0) {
-    return [{ reason: "Sem cancelamentos no período", count: 0 }];
+  const reasonMap = new Map<string, number>();
+  let total = 0;
+
+  for (const row of data ?? []) {
+    const payload = row as { payload: { cancellation_reason?: string } };
+    const reason = payload.payload.cancellation_reason ?? "Não informado";
+    reasonMap.set(reason, (reasonMap.get(reason) ?? 0) + 1);
+    total++;
   }
 
-  const reasonCounts = new Map<string, number>();
-  for (const sub of canceled) {
-    const reason = sub.plan_id
-      ? `Plano ${sub.plan_id}`
-      : "Motivo não informado";
-    reasonCounts.set(reason, (reasonCounts.get(reason) ?? 0) + 1);
-  }
+  if (total === 0) return [];
 
-  return Array.from(reasonCounts.entries())
-    .map(([reason, count]) => ({ reason, count }))
+  return [...reasonMap.entries()]
+    .map(([reason, count]) => ({
+      reason,
+      count,
+      percentage: Math.round((count / total) * 100),
+    }))
     .sort((a, b) => b.count - a.count);
-}
-
-export async function getTopUsersByStudies(): Promise<TopUserByStudies[]> {
-  const supabase = await createServerSupabaseClient();
-  const since = thirtyDaysAgo();
-
-  const { data: studies } = await supabase
-    .from("studies")
-    .select("owner_id")
-    .gte("created_at", since);
-
-  if (!studies || studies.length === 0) return [];
-
-  const countsByUser = new Map<string, number>();
-  for (const study of studies) {
-    if (!study.owner_id) continue;
-    countsByUser.set(
-      study.owner_id,
-      (countsByUser.get(study.owner_id) ?? 0) + 1
-    );
-  }
-
-  const sorted = Array.from(countsByUser.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
-
-  if (sorted.length === 0) return [];
-
-  const userIds = sorted.map(([id]) => id);
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, display_name")
-    .in("id", userIds);
-
-  const profileMap = new Map(
-    (profiles ?? []).map((p) => [p.id, p.display_name ?? "Usuário anônimo"])
-  );
-
-  return sorted.map(([userId, studyCount]) => ({
-    userId,
-    displayName: profileMap.get(userId) ?? "Usuário anônimo",
-    studyCount,
-  }));
 }
