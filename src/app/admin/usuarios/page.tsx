@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { listUsers } from "@/lib/admin-users";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { UserManagement } from "./user-management";
 
 export const metadata = {
@@ -44,7 +45,7 @@ async function UsersContent({
 
   return (
     <UserManagement
-      initialUsers={users}
+      initialUsers={users as unknown as import("@/lib/admin-users").AdminUserRow[]}
       initialTotal={total}
       initialSearch={search}
       initialPage={page}
