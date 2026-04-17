@@ -7,8 +7,11 @@ export interface AdminUser {
   role: string;
   created_at: string;
   study_count: number;
-  subscription_status: string | null;
+  subscription_status: "active" | "past_due" | "canceled" | "expired" | null;
   subscription_plan: string | null;
+  plan_label: string | null;
+  subscription_end: string | null;
+  last_sign_in_at: string | null;
 }
 
 export interface ListUsersParams {
@@ -89,6 +92,11 @@ export async function listUsers(
       (s) => s.status === "active" || s.status === "past_due",
     );
 
+    const planLabels: Record<string, string> = {
+      monthly: "Mensal",
+      annual: "Anual",
+    };
+
     return {
       id: row.id as string,
       email: row.email as string,
@@ -96,8 +104,11 @@ export async function listUsers(
       role: row.role as string,
       created_at: row.created_at as string,
       study_count: studies?.[0]?.count ?? 0,
-      subscription_status: activeSub?.status ?? null,
+      subscription_status: (activeSub?.status as AdminUser["subscription_status"]) ?? null,
       subscription_plan: activeSub?.plan_id ?? null,
+      plan_label: activeSub ? (planLabels[activeSub.plan_id] ?? activeSub.plan_id) : null,
+      subscription_end: (row as Record<string, unknown>).subscription_end as string | null ?? null,
+      last_sign_in_at: (row as Record<string, unknown>).last_sign_in_at as string | null ?? null,
     };
   });
 

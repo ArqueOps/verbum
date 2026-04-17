@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getCancellationHistory } from "@/lib/admin-users";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,11 +18,12 @@ export async function GET(
 
   const { id } = await params;
 
-  const result = await getCancellationHistory(id);
-
-  if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+  try {
+    const supabase = await createServerSupabaseClient();
+    const entries = await getCancellationHistory(supabase, id);
+    return NextResponse.json(entries);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro desconhecido";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json(result.data);
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { deactivateAccount } from "@/lib/admin-users";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,11 +18,12 @@ export async function POST(
 
   const { id } = await params;
 
-  const result = await deactivateAccount(id);
-
-  if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+  try {
+    const supabase = await createServerSupabaseClient();
+    await deactivateAccount(supabase, id);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro desconhecido";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true });
 }
