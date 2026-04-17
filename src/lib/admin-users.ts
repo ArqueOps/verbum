@@ -54,6 +54,8 @@ export interface CancellationEntry {
   reason: string;
   canceled_at: string;
   admin_id: string | null;
+  action_type: string | null;
+  canceled_by: string | null;
 }
 
 export async function listUsers(
@@ -253,7 +255,7 @@ export async function getCancellationHistory(
 ): Promise<CancellationEntry[]> {
   const { data, error } = await supabase
     .from("subscription_cancellations")
-    .select("id, user_id, reason, canceled_at, admin_id")
+    .select("id, user_id, reason, canceled_at, admin_id, action_type, canceled_by")
     .eq("user_id", userId)
     .order("canceled_at", { ascending: true });
 

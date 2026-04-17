@@ -44,7 +44,7 @@ async function UsersContent({
 
   return (
     <UserManagement
-      initialUsers={users}
+      initialUsers={users as unknown as import("@/lib/admin-users").AdminUserRow[]}
       initialTotal={total}
       initialSearch={search}
       initialPage={page}
