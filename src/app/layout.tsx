@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -44,6 +45,7 @@ export default function RootLayout({
           <main className="mx-auto w-full max-w-[1200px] flex-1 flex flex-col px-4 pt-6 pb-12 sm:px-8">
             {children}
           </main>
+          <Footer />
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>
