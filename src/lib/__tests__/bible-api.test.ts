@@ -37,7 +37,6 @@ function createMockSupabase(overrides: {
     single: vi.fn().mockReturnValue(versionResult),
   };
 
-  let fromCallCount = 0;
   const fromMap: Record<string, unknown> = {
     books: bookChain,
     bible_versions: versionChain,
