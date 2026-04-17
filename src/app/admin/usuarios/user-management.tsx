@@ -8,13 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
-  AlertDialogTrigger,
   AlertDialogPopup,
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogClose,
 } from "@/components/ui/alert-dialog";
-import type { AdminUserRow, CancellationEntry } from "@/lib/admin-users";
+import type { AdminUser, CancellationEntry } from "@/lib/admin-users";
 import type { ActionResult } from "./actions";
 import {
   grantSubscriptionAction,
@@ -92,7 +91,7 @@ function GrantSubscriptionModal({
   user,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   onClose: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(grantSubscriptionAction, initialActionState);
@@ -167,7 +166,7 @@ function RevokeSubscriptionModal({
   user,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   onClose: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(revokeSubscriptionAction, initialActionState);
@@ -226,7 +225,7 @@ function ExtendSubscriptionModal({
   user,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   onClose: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(extendSubscriptionAction, initialActionState);
@@ -284,7 +283,7 @@ function DeactivateAccountModal({
   user,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   onClose: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(deactivateAccountAction, initialActionState);
@@ -328,7 +327,7 @@ function CancellationHistoryPanel({
   entries,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   entries: CancellationEntry[];
   onClose: () => void;
 }) {
@@ -370,18 +369,18 @@ function CancellationHistoryPanel({
                   <span className="text-xs font-medium text-muted-foreground">
                     {formatDateTime(entry.canceled_at)}
                   </span>
-                  {entry.action_type && (
+                  {entry.admin_id && (
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {entry.action_type}
+                      Admin
                     </span>
                   )}
                 </div>
                 <p className="text-sm text-foreground">
                   {entry.reason ?? "Sem motivo informado"}
                 </p>
-                {entry.canceled_by && (
+                {entry.admin_id && (
                   <p className="text-xs text-muted-foreground">
-                    Por: {entry.canceled_by}
+                    Por: {entry.admin_id}
                   </p>
                 )}
               </div>
@@ -397,8 +396,8 @@ function UserActionsDropdown({
   user,
   onAction,
 }: {
-  user: AdminUserRow;
-  onAction: (action: string, user: AdminUserRow) => void;
+  user: AdminUser;
+  onAction: (action: string, user: AdminUser) => void;
 }) {
   const [open, setOpen] = useState(false);
   const hasActiveSub = user.subscription_status === "active";
@@ -474,7 +473,7 @@ export function UserManagement({
   initialPage,
   initialPerPage,
 }: {
-  initialUsers: AdminUserRow[];
+  initialUsers: AdminUser[];
   initialTotal: number;
   initialSearch: string;
   initialPage: number;
@@ -487,10 +486,10 @@ export function UserManagement({
   const [search, setSearch] = useState(initialSearch);
   const [activeModal, setActiveModal] = useState<{
     type: "grant" | "revoke" | "extend" | "deactivate" | null;
-    user: AdminUserRow | null;
+    user: AdminUser | null;
   }>({ type: null, user: null });
   const [historyPanel, setHistoryPanel] = useState<{
-    user: AdminUserRow;
+    user: AdminUser;
     entries: CancellationEntry[];
   } | null>(null);
 
@@ -525,7 +524,7 @@ export function UserManagement({
   }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAction = useCallback(
-    async (action: string, user: AdminUserRow) => {
+    async (action: string, user: AdminUser) => {
       if (action === "history") {
         try {
           const res = await fetch(

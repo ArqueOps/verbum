@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-auth";
 import { grantSubscription } from "@/lib/admin-users";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,16 +41,19 @@ export async function POST(
     );
   }
 
-  const result = await grantSubscription(
-    id,
-    auth.admin.id,
-    parsed.data.planInterval,
-    parsed.data.periodMonths,
-  );
+  const durationDays = parsed.data.periodMonths * 30;
 
-  if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+  try {
+    const supabase = await createServerSupabaseClient();
+    const result = await grantSubscription(supabase, {
+      userId: id,
+      planId: parsed.data.planInterval,
+      durationDays,
+      adminId: auth.admin.id,
+    });
+    return NextResponse.json({ success: true, subscriptionId: result.subscriptionId });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro desconhecido";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true });
 }
