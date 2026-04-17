@@ -130,6 +130,7 @@ export async function fetchStudies(
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function unpublishStudy(studyId: string, _reason: string) {
   await requireAdmin();
   const admin = createAdminClient();
