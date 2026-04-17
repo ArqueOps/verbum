@@ -4,6 +4,8 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Toaster } from "sonner";
+import { OfflineBanner } from "@/components/pwa/offline-banner";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import "./globals.css";
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -46,6 +48,8 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <OfflineBanner />
+          <InstallPrompt />
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>
