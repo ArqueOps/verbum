@@ -1,31 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-export interface ActiveSubscription {
-  id: string;
-  status: string;
-  current_period_end: string;
-  caramelou_subscription_id: string | null;
-}
-
-export async function getActiveSubscription(
-  userId: string,
-): Promise<ActiveSubscription | null> {
-  const supabase = await createServerSupabaseClient();
-  const nowIso = new Date().toISOString();
-
-  const { data } = await supabase
-    .from("subscriptions")
-    .select("id, status, current_period_end, caramelou_subscription_id")
-    .eq("user_id", userId)
-    .in("status", ["active", "cancelled"])
-    .gt("current_period_end", nowIso)
-    .order("current_period_end", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  return data as ActiveSubscription | null;
-}
-
 export interface CanGenerateStudyResult {
   allowed: boolean;
   reason?: string;
@@ -37,13 +11,23 @@ const DAILY_LIMIT_REASON =
 export async function canGenerateStudy(
   userId: string,
 ): Promise<CanGenerateStudyResult> {
-  const subscription = await getActiveSubscription(userId);
+  const supabase = await createServerSupabaseClient();
+  const nowIso = new Date().toISOString();
+
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("status, current_period_end")
+    .eq("user_id", userId)
+    .in("status", ["active", "canceled"])
+    .gt("current_period_end", nowIso)
+    .order("current_period_end", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (subscription) {
     return { allowed: true };
   }
 
-  const supabase = await createServerSupabaseClient();
   const startOfDayUtc = new Date();
   startOfDayUtc.setUTCHours(0, 0, 0, 0);
 
