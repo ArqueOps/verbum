@@ -1,0 +1,10 @@
+{
+  "name": "Verbum",
+  "short_name": "Verbum",
+  "description": "Profundidade que ilumina. Estudo bíblico com inteligência artificial.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1E3A5F",
+  "icons": []
+}

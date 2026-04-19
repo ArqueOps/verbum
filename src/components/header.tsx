@@ -14,9 +14,9 @@ interface NavLink {
 
 const navLinks: NavLink[] = [
   { href: "/", label: "Início" },
-  { href: "/estudos", label: "Estudos" },
-  { href: "/planos", label: "Planos de Leitura" },
-  { href: "/biblioteca", label: "Minha Biblioteca" },
+  { href: "/blog", label: "Blog" },
+  { href: "/generate", label: "Gerar Estudo" },
+  { href: "/meus-estudos", label: "Meus Estudos" },
 ];
 
 export function Header() {
