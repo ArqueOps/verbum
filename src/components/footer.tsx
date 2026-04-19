@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const navLinks = [
@@ -14,11 +15,14 @@ export function Footer() {
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           {/* Brand */}
           <div className="flex flex-col gap-2">
-            <Link
-              href="/"
-              className="font-display text-[25px] font-semibold tracking-[-0.02em] text-white"
-            >
-              Verbum
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/logo.png"
+                alt="Verbum"
+                width={120}
+                height={120}
+                className="h-10 w-auto brightness-0 invert"
+              />
             </Link>
             <p className="max-w-[280px] text-sm text-neutral-300">
               Profundidade que ilumina. Estudo bíblico com inteligência artificial.
