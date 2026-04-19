@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -49,11 +50,15 @@ export function Header() {
     <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur-sm dark:border-neutral-700 dark:bg-[#0F1720]/95">
       <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 sm:px-8">
         {/* Logo */}
-        <Link
-          href="/"
-          className="font-display text-[25px] font-semibold tracking-[-0.02em] text-[#1E3A5F] dark:text-white"
-        >
-          Verbum
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="Verbum"
+            width={120}
+            height={120}
+            className="h-10 w-auto"
+            priority
+          />
         </Link>
 
         {/* Desktop nav */}
