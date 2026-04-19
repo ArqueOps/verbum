@@ -112,7 +112,7 @@ export function PricingPlans() {
           "Acesso ao blog público",
         ]}
         ctaText="Começar Grátis"
-        ctaHref="/register"
+        ctaHref="/auth/signup"
       />
 
       {/* 10 Créditos */}

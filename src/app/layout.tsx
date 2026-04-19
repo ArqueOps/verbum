@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Header } from "@/components/header";
@@ -21,7 +21,11 @@ const inter = Inter({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum-two.vercel.app";
+
+export const viewport: Viewport = {
+  themeColor: "#1E3A5F",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
