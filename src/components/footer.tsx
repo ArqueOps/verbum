@@ -2,14 +2,7 @@ import Link from "next/link";
 
 const navLinks = [
   { href: "/blog", label: "Blog" },
-  { href: "/sobre", label: "Sobre" },
-  { href: "/precos", label: "Preços" },
-  { href: "/contato", label: "Contato" },
-];
-
-const legalLinks = [
-  { href: "/termos", label: "Termos de Uso" },
-  { href: "/privacidade", label: "Política de Privacidade" },
+  { href: "/pricing", label: "Preços" },
 ];
 
 export function Footer() {
@@ -50,23 +43,6 @@ export function Footer() {
             </nav>
           </div>
 
-          {/* Legal */}
-          <div className="flex flex-col gap-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#C8963E]">
-              Legal
-            </h3>
-            <nav className="flex flex-col gap-1.5" aria-label="Links legais">
-              {legalLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm text-neutral-300 transition-colors hover:text-white"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
         </div>
 
         {/* Divider + copyright */}

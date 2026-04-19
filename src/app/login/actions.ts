@@ -54,5 +54,5 @@ export async function signIn(
     return { error: "E-mail ou senha inválidos" };
   }
 
-  redirect("/dashboard");
+  redirect("/meus-estudos");
 }
