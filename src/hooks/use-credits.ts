@@ -56,10 +56,17 @@ export function useCredits(): UseCreditsReturn {
     isLoading: true,
   });
   const userIdRef = useRef<string | null>(null);
-  const supabaseRef = useRef(createBrowserClient());
+  // Lazy init: avoid running createBrowserClient during SSR prerender where
+  // NEXT_PUBLIC_SUPABASE_* env vars may be absent (Vercel preview builds).
+  // The client is only constructed in the browser, on first render there.
+  const supabaseRef = useRef<ReturnType<typeof createBrowserClient> | null>(null);
+  if (supabaseRef.current === null && typeof window !== "undefined") {
+    supabaseRef.current = createBrowserClient();
+  }
 
   const fetchCredits = useCallback(async () => {
     const supabase = supabaseRef.current;
+    if (!supabase) return;
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -94,6 +101,7 @@ export function useCredits(): UseCreditsReturn {
 
   useEffect(() => {
     const supabase = supabaseRef.current;
+    if (!supabase) return;
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
     try {
