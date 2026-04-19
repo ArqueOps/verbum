@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
             model_used: MODEL_USED,
             language: "pt-BR",
           })
-          .select("id")
+          .select("id, slug")
           .single();
 
         if (insertError || !savedStudy) {
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
             .eq("id", user.id);
         }
 
-        sendEvent(savedStudy.id, "done");
+        sendEvent(savedStudy.slug, "done");
       } catch (err) {
         const message =
           totalAbort.signal.aborted
