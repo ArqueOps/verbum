@@ -56,7 +56,7 @@ export async function signIn(params: SignInParams): Promise<AuthResult> {
     return { error: error.message };
   }
 
-  redirect("/dashboard");
+  redirect("/meus-estudos");
 }
 
 export async function signOut(): Promise<void> {
