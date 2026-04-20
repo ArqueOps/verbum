@@ -17,11 +17,11 @@ export function Footer() {
           <div className="flex flex-col gap-2">
             <Link href="/" className="flex items-center">
               <Image
-                src="/logo.png"
+                src="/logo-white.png"
                 alt="Verbum"
-                width={120}
-                height={120}
-                className="h-10 w-auto brightness-0 invert"
+                width={240}
+                height={240}
+                className="h-14 w-auto"
               />
             </Link>
             <p className="max-w-[280px] text-sm text-neutral-300">

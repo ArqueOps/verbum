@@ -218,7 +218,7 @@ export async function GET(
                 opacity: 0.5,
               }}
             >
-              verbum.vercel.app
+              verbum-two.vercel.app
             </div>
           </div>
         </div>

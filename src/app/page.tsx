@@ -1,22 +1,48 @@
 import type { Metadata } from "next";
+import { HeroSection } from "@/components/landing/hero-section";
+import { ForWhomSection } from "@/components/landing/for-whom-section";
+import { HowItWorksSection } from "@/components/landing/how-it-works-section";
+import { SevenDimensionsSection } from "@/components/landing/seven-dimensions-section";
+import { TwoPathsSection } from "@/components/landing/two-paths-section";
+import { PillarsSection } from "@/components/landing/pillars-section";
+import { BlogPreviewSection } from "@/components/landing/blog-preview-section";
+import { PricingPreviewSection } from "@/components/landing/pricing-preview-section";
+import { FaqSection } from "@/components/landing/faq-section";
+import { FinalCtaSection } from "@/components/landing/final-cta-section";
 
 export const metadata: Metadata = {
-  alternates: {
-    canonical: "/",
+  title: "Verbum — Profundidade que ilumina",
+  description:
+    "Plataforma de estudo bíblico com IA. Exegese nas línguas originais, contexto histórico, hermenêutica e escatologia para cada passagem.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Verbum — Profundidade que ilumina",
+    description:
+      "Estudo bíblico aprofundado com IA: sete dimensões de análise para cada passagem.",
+    type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Verbum — Profundidade que ilumina",
+    description:
+      "Estudo bíblico aprofundado com IA: sete dimensões de análise para cada passagem.",
   },
 };
 
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-4">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">
-          Verbum
-        </h1>
-        <p className="mt-4 text-lg text-foreground/70">
-          Profundidade que ilumina
-        </p>
-      </div>
-    </main>
+    <>
+      <HeroSection />
+      <ForWhomSection />
+      <HowItWorksSection />
+      <SevenDimensionsSection />
+      <TwoPathsSection />
+      <PillarsSection />
+      <BlogPreviewSection />
+      <PricingPreviewSection />
+      <FaqSection />
+      <FinalCtaSection />
+    </>
   );
 }

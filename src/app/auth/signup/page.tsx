@@ -14,9 +14,9 @@ export default function SignupPage() {
         <Image
           src="/logo.png"
           alt="Verbum"
-          width={120}
-          height={120}
-          className="mx-auto h-16 w-auto"
+          width={320}
+          height={320}
+          className="mx-auto h-40 w-auto"
           priority
         />
         <h2 className="mt-4 text-center text-xl font-semibold text-[var(--foreground)]">

@@ -22,7 +22,9 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, avatar_url")
+    .select(
+      "display_name, avatar_url, sex, age, curiosity, locale, social_instagram, social_facebook, social_linkedin, social_youtube, social_threads, social_tiktok, social_substack",
+    )
     .eq("id", user.id)
     .single();
 
@@ -52,6 +54,19 @@ export default async function ProfilePage() {
           <ProfileForm
             initialDisplayName={profile?.display_name ?? ""}
             initialAvatarUrl={profile?.avatar_url ?? ""}
+            initialSex={(profile as Record<string, unknown>)?.sex as "male" | "female" | null ?? null}
+            initialAge={(profile as Record<string, unknown>)?.age as number | null ?? null}
+            initialCuriosity={(profile as Record<string, unknown>)?.curiosity as string | null ?? null}
+            initialLocale={((profile as Record<string, unknown>)?.locale as "pt-BR" | "en" | "es" | null) ?? "pt-BR"}
+            initialSocials={{
+              instagram: (profile as Record<string, unknown>)?.social_instagram as string | null ?? null,
+              facebook: (profile as Record<string, unknown>)?.social_facebook as string | null ?? null,
+              linkedin: (profile as Record<string, unknown>)?.social_linkedin as string | null ?? null,
+              youtube: (profile as Record<string, unknown>)?.social_youtube as string | null ?? null,
+              threads: (profile as Record<string, unknown>)?.social_threads as string | null ?? null,
+              tiktok: (profile as Record<string, unknown>)?.social_tiktok as string | null ?? null,
+              substack: (profile as Record<string, unknown>)?.social_substack as string | null ?? null,
+            }}
           />
         </div>
 

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { CreditsBadge } from "@/components/layout/CreditsBadge";
+import { DailyLimitBadge } from "@/components/layout/DailyLimitBadge";
 
 interface NavLink {
   href: string;
@@ -15,8 +15,9 @@ interface NavLink {
 
 const navLinks: NavLink[] = [
   { href: "/", label: "Início" },
-  { href: "/blog", label: "Blog" },
+  { href: "/perguntar", label: "O que a Bíblia diz?" },
   { href: "/generate", label: "Gerar Estudo" },
+  { href: "/blog", label: "Blog" },
   { href: "/meus-estudos", label: "Meus Estudos" },
 ];
 
@@ -48,15 +49,15 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur-sm dark:border-neutral-700 dark:bg-[#0F1720]/95">
-      <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 sm:px-8">
+      <div className="mx-auto flex h-24 max-w-[1200px] items-center justify-between px-4 sm:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center">
           <Image
             src="/logo.png"
             alt="Verbum"
-            width={120}
-            height={120}
-            className="h-10 w-auto"
+            width={240}
+            height={240}
+            className="h-16 w-auto"
             priority
           />
         </Link>
@@ -77,13 +78,13 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-          <CreditsBadge />
+          <DailyLimitBadge />
           <ThemeToggle />
         </nav>
 
         {/* Mobile controls */}
         <div className="flex items-center gap-2 md:hidden">
-          <CreditsBadge />
+          <DailyLimitBadge />
           <ThemeToggle />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}

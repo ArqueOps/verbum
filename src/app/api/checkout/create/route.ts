@@ -33,13 +33,16 @@ export async function POST(request: NextRequest) {
 
   const { plan } = parsed.data;
 
-  const { data: userCredits } = await supabase
-    .from("user_credits")
-    .select("has_active_subscription")
+  const { data: activeSub } = await supabase
+    .from("subscriptions")
+    .select("id")
     .eq("user_id", user.id)
-    .single();
+    .eq("status", "active")
+    .gt("current_period_end", new Date().toISOString())
+    .limit(1)
+    .maybeSingle();
 
-  if (userCredits?.has_active_subscription) {
+  if (activeSub) {
     return Response.json(
       { error: "Você já possui uma assinatura ativa." },
       { status: 409 },

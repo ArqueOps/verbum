@@ -23,9 +23,9 @@ export default async function LoginPage() {
           <Image
             src="/logo.png"
             alt="Verbum"
-            width={120}
-            height={120}
-            className="mx-auto h-16 w-auto"
+            width={320}
+            height={320}
+            className="mx-auto h-40 w-auto"
             priority
           />
           <p className="mt-1 text-sm text-muted-foreground">
