@@ -14,6 +14,8 @@ END $$;
 
 -- Profile columns
 DO $$
+DECLARE
+  col_name TEXT;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='sex') THEN
     ALTER TABLE public.profiles ADD COLUMN sex public.gender;
@@ -34,16 +36,16 @@ BEGIN
     ALTER TABLE public.profiles ADD COLUMN country_code TEXT;
   END IF;
   -- Social usernames (username-only, never URL)
-  FOR col IN SELECT unnest(ARRAY[
+  FOREACH col_name IN ARRAY ARRAY[
     'social_instagram','social_facebook','social_linkedin',
     'social_youtube','social_threads','social_tiktok','social_substack'
-  ])
+  ]
   LOOP
     IF NOT EXISTS (
       SELECT 1 FROM information_schema.columns
-      WHERE table_schema='public' AND table_name='profiles' AND column_name=col
+      WHERE table_schema='public' AND table_name='profiles' AND column_name=col_name
     ) THEN
-      EXECUTE format('ALTER TABLE public.profiles ADD COLUMN %I TEXT CHECK (%I IS NULL OR char_length(%I) <= 64)', col, col, col);
+      EXECUTE format('ALTER TABLE public.profiles ADD COLUMN %I TEXT CHECK (%I IS NULL OR char_length(%I) <= 64)', col_name, col_name, col_name);
     END IF;
   END LOOP;
 END $$;
