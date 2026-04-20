@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-export const PUBLIC_ROUTES_PREFIX = ["/pricing", "/login", "/signup", "/auth/callback", "/auth/forgot-password", "/auth/reset-password", "/auth/signup", "/blog", "/estudos", "/api/og"];
+export const PUBLIC_ROUTES_PREFIX = ["/pricing", "/login", "/signup", "/auth/callback", "/auth/forgot-password", "/auth/reset-password", "/auth/signup", "/blog", "/estudos", "/api/og", "/perguntar"];
 export const PUBLIC_ROUTES_EXACT = ["/"];
 
 export function isPublicRoute(pathname: string): boolean {
