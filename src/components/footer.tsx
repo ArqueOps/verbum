@@ -19,9 +19,9 @@ export function Footer() {
               <Image
                 src="/logo.png"
                 alt="Verbum"
-                width={120}
-                height={120}
-                className="h-10 w-auto brightness-0 invert"
+                width={240}
+                height={240}
+                className="h-14 w-auto brightness-0 invert"
               />
             </Link>
             <p className="max-w-[280px] text-sm text-neutral-300">
