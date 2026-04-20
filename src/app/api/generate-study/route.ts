@@ -69,35 +69,38 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3. Credits/subscription check
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("credits_remaining")
-    .eq("id", user.id)
-    .single();
+  // 3. Daily-limit / subscription check (free = 1 estudo/dia; pago = ilimitado)
+  const { data: limitData, error: limitError } = await supabase.rpc(
+    "check_user_daily_limit",
+    { p_user_id: user.id },
+  );
 
-  const { data: activeSubscription } = await supabase
-    .from("subscriptions")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .gt("current_period_end", new Date().toISOString())
-    .limit(1)
-    .single();
+  if (limitError || !limitData) {
+    return NextResponse.json(
+      { error: "Falha ao verificar limite diário.", code: "LIMIT_CHECK_FAILED" },
+      { status: 500 },
+    );
+  }
 
-  const hasActiveSubscription = !!activeSubscription;
-  const creditsRemaining = (profile as Record<string, unknown>)
-    ?.credits_remaining as number | null;
+  const limit = limitData as {
+    can_generate: boolean;
+    has_active_subscription: boolean;
+    studies_today: number;
+    daily_limit: number;
+  };
 
-  if (!hasActiveSubscription && (creditsRemaining === 0 || creditsRemaining === null)) {
+  if (!limit.can_generate) {
     return NextResponse.json(
       {
-        error: "Créditos insuficientes. Adquira um plano para continuar.",
-        code: "INSUFFICIENT_CREDITS",
+        error:
+          "Limite diário atingido. Volte amanhã ou assine um plano para estudos ilimitados.",
+        code: "DAILY_LIMIT_REACHED",
       },
       { status: 403 },
     );
   }
+
+  const hasActiveSubscription = limit.has_active_subscription;
 
   // 4. Fetch passage text with 5s timeout
   let passageText: string | undefined;
@@ -210,15 +213,10 @@ export async function POST(request: NextRequest) {
 
         await supabase.from("study_sections").insert(dbSections);
 
-        // Decrement credits only if no active subscription
-        if (!hasActiveSubscription && creditsRemaining && creditsRemaining > 0) {
-          await supabase
-            .from("profiles")
-            .update({
-              credits_remaining: creditsRemaining - 1,
-            } as Record<string, unknown>)
-            .eq("id", user.id);
-        }
+        // No credit decrement — daily limit is derived from COUNT(studies today).
+        // Free users that hit limit will be blocked on the next /api/generate-study
+        // request via check_user_daily_limit.
+        void hasActiveSubscription;
 
         sendEvent(savedStudy.slug, "done");
       } catch (err) {

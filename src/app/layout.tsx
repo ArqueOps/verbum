@@ -23,12 +23,11 @@ const inter = Inter({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum-two.vercel.app";
 
-// Root layout mounts Header → CreditsBadge → useCredits → Supabase browser
-// client. When NEXT_PUBLIC_SUPABASE_* env vars are absent during a Vercel
-// preview build, prerender of /_not-found throws. Forcing dynamic rendering
-// across the app avoids static generation and defers all rendering to the
-// runtime where env vars are always present. Pages that want to be static
-// can override this locally by exporting their own `dynamic` value.
+// Root layout mounts Header → DailyLimitBadge → useDailyLimit → Supabase
+// browser client. When NEXT_PUBLIC_SUPABASE_* env vars are absent during a
+// Vercel preview build, prerender of /_not-found throws. Forcing dynamic
+// rendering across the app avoids static generation and defers all rendering
+// to runtime where env vars are always present.
 export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {

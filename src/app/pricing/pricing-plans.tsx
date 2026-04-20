@@ -43,15 +43,18 @@ export function PricingPlans() {
         return;
       }
 
-      const { data: userCredits } = await supabase
-        .from("user_credits")
-        .select("has_active_subscription")
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("id")
         .eq("user_id", user.id)
-        .single();
+        .eq("status", "active")
+        .gt("current_period_end", new Date().toISOString())
+        .limit(1)
+        .maybeSingle();
 
       setUserState({
         isAuthenticated: true,
-        hasActiveSubscription: userCredits?.has_active_subscription ?? false,
+        hasActiveSubscription: !!subscription,
       });
       setIsHydrated(true);
     }
