@@ -168,9 +168,10 @@ END $$;
 DROP TABLE IF EXISTS public.user_credits CASCADE;
 
 -- ============================================================================
--- 6. Índice em studies(owner_id, created_at::date) para performance do daily limit
+-- 6. Índice btree composto em studies(owner_id, created_at DESC).
+-- O planner usa range scan em created_at para COUNT do daily limit.
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS idx_studies_owner_created_date
-  ON public.studies (owner_id, (created_at::date));
+CREATE INDEX IF NOT EXISTS idx_studies_owner_created
+  ON public.studies (owner_id, created_at DESC);
 
 COMMIT;
