@@ -112,7 +112,7 @@ export function TopicSearchUI() {
             eventStart = eventEnd + 2;
 
             const eventMatch = eventText.match(/^event:\s*(\w+)/m);
-            const dataMatch = eventText.match(/^data:\s*(.*)$/ms);
+            const dataMatch = eventText.match(/^data:\s*([\s\S]*)$/m);
             const eventName = eventMatch?.[1];
             const data = dataMatch?.[1] ?? "";
 
