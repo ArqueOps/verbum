@@ -22,6 +22,13 @@ export type SignInState = {
   };
 };
 
+function getValidRedirect(value: unknown): string {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+    return "/dashboard";
+  }
+  return value;
+}
+
 export async function signIn(
   _prevState: SignInState,
   formData: FormData,
@@ -30,6 +37,8 @@ export async function signIn(
     email: formData.get("email"),
     password: formData.get("password"),
   };
+
+  const redirectTo = getValidRedirect(formData.get("redirect"));
 
   const parsed = signInSchema.safeParse(rawData);
 
@@ -54,5 +63,5 @@ export async function signIn(
     return { error: "E-mail ou senha inválidos" };
   }
 
-  redirect("/meus-estudos");
+  redirect(redirectTo);
 }
