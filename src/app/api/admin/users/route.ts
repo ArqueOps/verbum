@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
+      { error: err instanceof Error ? err.message : "Erro desconhecido" },
       { status: 500 },
     );
   }

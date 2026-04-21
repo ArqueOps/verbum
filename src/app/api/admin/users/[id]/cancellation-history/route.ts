@@ -24,7 +24,7 @@ export async function GET(
     return NextResponse.json(entries);
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
+      { error: err instanceof Error ? err.message : "Erro desconhecido" },
       { status: 500 },
     );
   }

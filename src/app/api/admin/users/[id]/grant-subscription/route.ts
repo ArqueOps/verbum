@@ -52,7 +52,7 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
+      { error: err instanceof Error ? err.message : "Erro desconhecido" },
       { status: 500 },
     );
   }

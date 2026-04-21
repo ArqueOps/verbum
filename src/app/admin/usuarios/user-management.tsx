@@ -13,7 +13,7 @@ import {
   AlertDialogDescription,
   AlertDialogClose,
 } from "@/components/ui/alert-dialog";
-import type { AdminUserRow, CancellationEntry } from "@/lib/admin-users";
+import type { AdminUser, CancellationEntry } from "@/lib/admin-users";
 import type { ActionResult } from "./actions";
 import {
   grantSubscriptionAction,
@@ -91,7 +91,7 @@ function GrantSubscriptionModal({
   user,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   onClose: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(grantSubscriptionAction, initialActionState);
@@ -166,7 +166,7 @@ function RevokeSubscriptionModal({
   user,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   onClose: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(revokeSubscriptionAction, initialActionState);
@@ -225,7 +225,7 @@ function ExtendSubscriptionModal({
   user,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   onClose: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(extendSubscriptionAction, initialActionState);
@@ -283,7 +283,7 @@ function DeactivateAccountModal({
   user,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   onClose: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(deactivateAccountAction, initialActionState);
@@ -327,7 +327,7 @@ function CancellationHistoryPanel({
   entries,
   onClose,
 }: {
-  user: AdminUserRow;
+  user: AdminUser;
   entries: CancellationEntry[];
   onClose: () => void;
 }) {
@@ -391,8 +391,8 @@ function UserActionsDropdown({
   user,
   onAction,
 }: {
-  user: AdminUserRow;
-  onAction: (action: string, user: AdminUserRow) => void;
+  user: AdminUser;
+  onAction: (action: string, user: AdminUser) => void;
 }) {
   const [open, setOpen] = useState(false);
   const hasActiveSub = user.subscription_status === "active";
@@ -468,7 +468,7 @@ export function UserManagement({
   initialPage,
   initialPerPage,
 }: {
-  initialUsers: AdminUserRow[];
+  initialUsers: AdminUser[];
   initialTotal: number;
   initialSearch: string;
   initialPage: number;
@@ -481,10 +481,10 @@ export function UserManagement({
   const [search, setSearch] = useState(initialSearch);
   const [activeModal, setActiveModal] = useState<{
     type: "grant" | "revoke" | "extend" | "deactivate" | null;
-    user: AdminUserRow | null;
+    user: AdminUser | null;
   }>({ type: null, user: null });
   const [historyPanel, setHistoryPanel] = useState<{
-    user: AdminUserRow;
+    user: AdminUser;
     entries: CancellationEntry[];
   } | null>(null);
 
@@ -519,7 +519,7 @@ export function UserManagement({
   }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAction = useCallback(
-    async (action: string, user: AdminUserRow) => {
+    async (action: string, user: AdminUser) => {
       if (action === "history") {
         try {
           const res = await fetch(
