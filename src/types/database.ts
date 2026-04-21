@@ -147,7 +147,6 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
-          credits_remaining: number
           display_name: string | null
           id: string
           preferred_version: number | null
@@ -157,7 +156,6 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
-          credits_remaining?: number
           display_name?: string | null
           id: string
           preferred_version?: number | null
@@ -167,7 +165,6 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
-          credits_remaining?: number
           display_name?: string | null
           id?: string
           preferred_version?: number | null
@@ -310,74 +307,36 @@ export type Database = {
           },
         ]
       }
-<<<<<<< HEAD
-=======
-      subscriptions: {
-        Row: {
-          created_at: string
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          plan_id: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          plan_id?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          plan_id?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_credits: {
         Row: {
-          balance: number
+          id: string
+          user_id: string
+          credits_remaining: number
+          credits_used: number
+          has_active_subscription: boolean
+          subscription_end: string | null
           created_at: string
           updated_at: string
-          user_id: string
         }
         Insert: {
-          balance?: number
+          id?: string
+          user_id: string
+          credits_remaining?: number
+          credits_used?: number
+          has_active_subscription?: boolean
+          subscription_end?: string | null
           created_at?: string
           updated_at?: string
-          user_id: string
         }
         Update: {
-          balance?: number
+          id?: string
+          user_id?: string
+          credits_remaining?: number
+          credits_used?: number
+          has_active_subscription?: boolean
+          subscription_end?: string | null
           created_at?: string
           updated_at?: string
-          user_id?: string
         }
         Relationships: [
           {
@@ -389,7 +348,6 @@ export type Database = {
           },
         ]
       }
->>>>>>> origin/feature/task-48719ebc-rls-policies-for-study_sections-and-user_credits-t
       user_api_credentials: {
         Row: {
           created_at: string
@@ -601,29 +559,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-<<<<<<< HEAD
       check_user_daily_limit: {
         Args: {
           p_user_id: string
         }
         Returns: Json
-=======
+      }
+      check_user_credits: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json
+      }
       consume_credit_and_save_study: {
         Args: {
+          p_user_id: string
           p_title: string
-          p_slug: string
-          p_verse_reference: string
-          p_content: string
-          p_model_used: string
+          p_content: Json
+          p_book_id?: number | null
+          p_chapter?: number | null
+          p_verse_start?: number | null
+          p_verse_end?: number | null
+          p_version_id?: number | null
           p_language?: string
           p_sections?: Json
         }
-        Returns: string
-      }
-      decrement_credits_on_study: {
-        Args: Record<string, never>
-        Returns: undefined
->>>>>>> origin/feature/task-48719ebc-rls-policies-for-study_sections-and-user_credits-t
+        Returns: Json
       }
       save_study_with_daily_limit: {
         Args: {
