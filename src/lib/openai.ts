@@ -4,14 +4,15 @@ import { z } from "zod";
 
 // --- Constants ---
 
+// Seções reais do estudo Verbum (fonte: companion_memory/verbum-prompt.md)
 export const STUDY_SECTION_TYPES = [
-  "context",
-  "word_study",
-  "theology",
-  "cross_references",
-  "commentaries",
-  "application",
-  "reflection",
+  "panorama",
+  "contexto",
+  "estrutura_contextual",
+  "sintese_exegetica",
+  "analise_hermeneutica",
+  "analise_escatologica",
+  "conclusao",
 ] as const;
 
 // --- Zod Schemas ---
@@ -91,25 +92,77 @@ function getClient(): OpenAI {
 }
 
 // --- Prompts ---
+//
+// Fonte de verdade: companion_memory/verbum-prompt.md
+// Estrutura do output (7 seções fixas):
+//   1. Panorama
+//   2. Contexto (autor, destinatários, local, situação, data)
+//   3. Estrutura contextual (A, B, C... N seções internas — texto + palavras
+//      hebraicas/gregas-chave + exegese versículo a versículo + hermenêutica
+//      + escatologia)
+//   4. Síntese exegética
+//   5. Análise hermenêutica geral
+//   6. Análise escatológica
+//   7. Conclusão final
+//
+// Regras: texto original (hebraico AT / grego NT) como fonte de verdade;
+// análise só à luz do próprio texto; hiper detalhado; sem viés político,
+// ideológico ou religioso; nunca superficial.
 
-const SYSTEM_PROMPT = `You are a biblical scholar and theologian. Generate a Bible study as a JSON array with exactly 7 sections.
+const SYSTEM_PROMPT = `Você é um teólogo e exegeta bíblico especializado em análise textual profunda nas línguas originais (hebraico para o Antigo Testamento, grego para o Novo Testamento).
 
-Each section must have:
-- "section_type": one of "context", "word_study", "theology", "cross_references", "commentaries", "application", "reflection"
-- "title": section title in Portuguese
-- "content": rich content in Portuguese using markdown formatting (bold, italic, lists, blockquotes)
-- "order_index": integer from 0 to 6, matching this order: context=0, word_study=1, theology=2, cross_references=3, commentaries=4, application=5, reflection=6
+Sua tarefa: gerar um estudo bíblico HIPER DETALHADO sobre a passagem fornecida, estruturado em exatamente 7 seções obrigatórias.
 
-Section guidelines:
-- context (Contexto Historico): historical, cultural, and literary context of the passage
-- word_study (Estudo de Palavras): key Hebrew/Greek words, their meanings and nuances
-- theology (Teologia): theological themes and doctrinal insights
-- cross_references (Referencias Cruzadas): related passages with brief explanations
-- commentaries (Comentarios): scholarly perspectives and traditional interpretations
-- application (Aplicacao Pratica): practical applications for daily life
-- reflection (Reflexao): devotional questions and meditation prompts
+## Regras inegociáveis
 
-Return ONLY the JSON array. No markdown code fences, no extra text.`;
+1. **Texto original como fonte de verdade**: toda análise parte do hebraico ou do grego. Cite termos-chave no alfabeto original + transliteração + significado.
+2. **Análise à luz do próprio texto**: interprete a passagem a partir do contexto bíblico interno (passagens paralelas, vocabulário do mesmo autor, contexto histórico-literário). Não introduza opiniões pessoais nem tradições extrabíblicas como autoridade.
+3. **Sem viés político, ideológico ou religioso**: apresente a exegese com rigor acadêmico neutro.
+4. **Hiper detalhado**: jamais superficial. Cada seção deve ser densa, exaustiva e tecnicamente precisa.
+5. **Idioma de saída**: Português (pt-BR). Use markdown (negrito, itálico, listas, citações em blockquote, tabelas quando útil).
+
+## Estrutura obrigatória (7 seções, nesta ordem exata)
+
+Retorne um array JSON com exatamente 7 objetos. Cada objeto tem:
+- "section_type": uma das chaves abaixo
+- "title": título em português
+- "content": conteúdo rico em markdown
+- "order_index": inteiro 0-6 na ordem exata das seções
+
+### 0 — panorama (Panorama)
+Visão geral da passagem: o que ela apresenta, seu lugar dentro do livro bíblico, por que é significativa, tema central resumido em 2-3 parágrafos.
+
+### 1 — contexto (Contexto)
+Contextualize exaustivamente:
+- **Autor**: quem escreveu, evidências internas/externas
+- **Destinatários**: para quem foi escrito, perfil sociocultural
+- **Local**: onde foi escrito e onde estavam os destinatários
+- **Situação**: circunstância histórica, conflito, necessidade pastoral/profética
+- **Data**: aproximação cronológica com justificativa
+
+### 2 — estrutura_contextual (Estrutura Contextual)
+Divida a passagem em seções internas (A, B, C... N conforme a estrutura natural do texto). Para CADA seção interna:
+- Texto da seção (citação da passagem)
+- Palavras hebraicas/gregas-chave: alfabeto original + transliteração + significado e nuance
+- Exegese versículo a versículo: análise gramatical, sintática, semântica
+- Hermenêutica: como o texto comunica seu significado
+- Escatologia (quando aplicável): implicações escatológicas da seção
+
+### 3 — sintese_exegetica (Síntese Exegética)
+Síntese unificada de toda a exegese: como as análises versículo a versículo convergem para o sentido do texto como um todo.
+
+### 4 — analise_hermeneutica (Análise Hermenêutica Geral)
+Análise hermenêutica ampla da passagem: princípios interpretativos, relação com o gênero literário, tensões e resoluções, conexão com o cânon bíblico.
+
+### 5 — analise_escatologica (Análise Escatológica)
+Implicações escatológicas: o que o texto diz sobre o desdobramento do plano divino, referências a realidades futuras, tipologia, cumprimento em Cristo (quando AT) ou consumação futura (quando NT).
+
+### 6 — conclusao (Conclusão Final)
+Conclusão densa e técnica que amarra panorama, contexto, exegese, hermenêutica e escatologia em uma leitura integrada final da passagem.
+
+## Formato da resposta
+
+Retorne EXCLUSIVAMENTE o array JSON válido. Zero prefácio, zero code fences, zero texto fora do JSON.`;
 
 export { SYSTEM_PROMPT };
 
@@ -121,14 +174,14 @@ export function buildUserPrompt(params: GenerateStudyParams): string {
     ? `${book} ${chapter}:${verseStart}-${verseEnd}`
     : `${book} ${chapter}:${verseStart}`;
 
-  let prompt = `Gere um estudo biblico completo para ${verseRef} (versao: ${versionId}).`;
+  let prompt = `Gere o estudo bíblico completo para ${verseRef} (versão de referência: ${versionId}).`;
 
   if (passageText) {
     prompt += `\n\nTexto da passagem:\n"${passageText}"`;
   }
 
   prompt +=
-    "\n\nResponda APENAS com o array JSON contendo as 7 secoes do estudo.";
+    "\n\nResponda EXCLUSIVAMENTE com o array JSON contendo as 7 seções do estudo, na ordem obrigatória.";
 
   return prompt;
 }

@@ -1,19 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Eye, Globe, GlobeLock, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StudyCardProps {
   title: string;
-  book: string;
-  chapter: number;
-  verseStart: number;
-  verseEnd: number;
+  book?: string;
+  chapter?: number;
+  verseStart?: number;
+  verseEnd?: number;
+  verseReference?: string;
   createdAt: string;
   isPublic: boolean;
-  isFavorite: boolean;
-  onToggleFavorite: () => void;
+  onTogglePublish?: () => void;
+  publishLoading?: boolean;
+  visibilityLocked?: boolean;
+  viewCount?: number;
   href: string;
 }
 
@@ -43,13 +46,18 @@ export function StudyCard({
   chapter,
   verseStart,
   verseEnd,
+  verseReference,
   createdAt,
   isPublic,
-  isFavorite,
-  onToggleFavorite,
+  onTogglePublish,
+  publishLoading,
+  visibilityLocked = false,
+  viewCount,
   href,
 }: StudyCardProps) {
-  const passage = formatPassage(book, chapter, verseStart, verseEnd);
+  const passage =
+    verseReference ??
+    formatPassage(book ?? "", chapter ?? 0, verseStart ?? 0, verseEnd ?? 0);
   const formattedDate = formatDatePtBr(createdAt);
 
   return (
@@ -59,25 +67,6 @@ export function StudyCard({
     >
       <div className="flex items-start justify-between">
         <span className="text-xs font-medium text-primary/70">{passage}</span>
-        <button
-          type="button"
-          aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleFavorite();
-          }}
-          className="relative z-10 rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-amber-500"
-        >
-          <Star
-            className={cn(
-              "size-4 transition-colors",
-              isFavorite
-                ? "fill-amber-500 text-amber-500"
-                : "fill-none text-muted-foreground",
-            )}
-          />
-        </button>
       </div>
 
       <h3 className="line-clamp-2 text-sm font-semibold text-card-foreground group-hover:text-primary">
@@ -85,19 +74,63 @@ export function StudyCard({
       </h3>
 
       <div className="mt-auto flex items-center justify-between">
-        <time className="text-xs text-muted-foreground" dateTime={createdAt}>
-          {formattedDate}
-        </time>
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight",
-            isPublic
-              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-              : "bg-muted text-muted-foreground",
+        <div className="flex items-center gap-3">
+          <time className="text-xs text-muted-foreground" dateTime={createdAt}>
+            {formattedDate}
+          </time>
+          {viewCount != null && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Eye className="size-3" />
+              {viewCount.toLocaleString("pt-BR")} {viewCount === 1 ? "visualização" : "visualizações"}
+            </span>
           )}
-        >
-          {isPublic ? "Publicado" : "Rascunho"}
-        </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {onTogglePublish && (
+            <button
+              type="button"
+              aria-label={
+                visibilityLocked
+                  ? "Controle de visibilidade exclusivo para assinantes"
+                  : isPublic
+                    ? "Marcar como privado"
+                    : "Marcar como público"
+              }
+              disabled={publishLoading || visibilityLocked}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onTogglePublish();
+              }}
+              className="relative z-10 rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              title={
+                visibilityLocked
+                  ? "Plano gratuito: estudos são sempre públicos. Assine para escolher."
+                  : undefined
+              }
+            >
+              {publishLoading ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : visibilityLocked ? (
+                <Lock className="size-3.5" />
+              ) : isPublic ? (
+                <Globe className="size-3.5" />
+              ) : (
+                <GlobeLock className="size-3.5" />
+              )}
+            </button>
+          )}
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight",
+              isPublic
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                : "bg-muted text-muted-foreground",
+            )}
+          >
+            {isPublic ? "Publicado" : "Rascunho"}
+          </span>
+        </div>
       </div>
     </Link>
   );

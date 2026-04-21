@@ -1,21 +1,19 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { fetchUserStudies } from "./actions";
-import { StudyFilters } from "./study-filters";
 import { StudyList } from "./study-list";
 import { Pagination } from "./pagination";
 
 export const metadata = {
   title: "Meus Estudos — Verbum",
-  description: "Gerencie e filtre seus estudos bíblicos.",
+  description: "Todos os seus estudos bíblicos gerados.",
 };
 
+const STUDIES_PER_PAGE = 10;
+const FREE_HISTORY_LIMIT = 3;
+
 interface SearchParams {
-  favoritos?: string;
-  livro?: string;
-  de?: string;
-  ate?: string;
-  pagina?: string;
+  page?: string;
 }
 
 export default async function MeusEstudosPage({
@@ -33,30 +31,36 @@ export default async function MeusEstudosPage({
   }
 
   const params = await searchParams;
-  const favoritosOnly = params.favoritos === "true";
-  const bookId = params.livro ? Number(params.livro) : null;
-  const dateFrom = params.de ?? null;
-  const dateTo = params.ate ?? null;
-  const currentPage = Math.max(1, Number(params.pagina) || 1);
+  const currentPage = Math.max(1, Number(params.page ?? "1"));
 
-  const { data: books } = await supabase
-    .from("books")
-    .select("id, name, abbr")
-    .order("position");
+  // Subscription check (paid users see unlimited history + visibility toggle)
+  const { data: activeSubscription } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .gt("current_period_end", new Date().toISOString())
+    .limit(1)
+    .maybeSingle();
 
-  let bookAbbr: string | null = null;
-  if (bookId && books) {
-    const match = books.find((b) => b.id === bookId);
-    if (match) bookAbbr = match.abbr;
-  }
+  const hasSubscription = !!activeSubscription;
 
-  const result = await fetchUserStudies({
-    page: currentPage,
-    favoritosOnly,
-    bookAbbr,
-    dateFrom,
-    dateTo,
-  });
+  const { count: totalCount } = await supabase
+    .from("studies")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", user.id);
+
+  const total = totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / STUDIES_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const offset = (safePage - 1) * STUDIES_PER_PAGE;
+
+  const { data: studies } = await supabase
+    .from("studies")
+    .select("id, title, verse_reference, created_at, slug, is_published, view_count")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + STUDIES_PER_PAGE - 1);
 
   return (
     <div className="space-y-6">
@@ -65,26 +69,68 @@ export default async function MeusEstudosPage({
           Meus Estudos
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Seus estudos bíblicos em um só lugar.
+          {hasSubscription
+            ? "Histórico completo dos seus estudos bíblicos."
+            : `Seus últimos estudos. No plano gratuito, apenas os ${FREE_HISTORY_LIMIT} mais recentes ficam acessíveis.`}
         </p>
       </div>
 
-      <StudyFilters
-        books={books ?? []}
-        currentBookId={bookId}
-        currentFavoritos={favoritosOnly}
-        currentDateFrom={dateFrom}
-        currentDateTo={dateTo}
+      <StudyList
+        studies={studies ?? []}
+        hasSubscription={hasSubscription}
+        freeHistoryLimit={FREE_HISTORY_LIMIT}
+        isFirstPage={safePage === 1}
       />
 
-      <StudyList studies={result.studies} />
-
-      {result.totalPages > 1 && (
-        <Pagination
-          currentPage={result.page}
-          totalPages={result.totalPages}
-        />
+      {totalPages > 1 && (
+        <Pagination currentPage={safePage} totalPages={totalPages} />
       )}
     </div>
+  );
+}
+
+function Pagination({
+  currentPage,
+  totalPages,
+}: {
+  currentPage: number;
+  totalPages: number;
+}) {
+  const prev = Math.max(1, currentPage - 1);
+  const next = Math.min(totalPages, currentPage + 1);
+
+  return (
+    <nav
+      className="flex items-center justify-center gap-2 pt-4"
+      aria-label="Paginação"
+    >
+      {currentPage > 1 ? (
+        <Link
+          href={`/meus-estudos?page=${prev}`}
+          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent"
+        >
+          Anterior
+        </Link>
+      ) : (
+        <span className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground/50">
+          Anterior
+        </span>
+      )}
+      <span className="px-3 text-sm text-muted-foreground">
+        Página {currentPage} de {totalPages}
+      </span>
+      {currentPage < totalPages ? (
+        <Link
+          href={`/meus-estudos?page=${next}`}
+          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent"
+        >
+          Próxima
+        </Link>
+      ) : (
+        <span className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground/50">
+          Próxima
+        </span>
+      )}
+    </nav>
   );
 }
