@@ -41,7 +41,11 @@
   "exclude": [
     "node_modules",
     "e2e",
+<<<<<<< HEAD
     "playwright.config.ts",
     "scripts"
+=======
+    "playwright.config.ts"
+>>>>>>> origin/feature/task-48719ebc-rls-policies-for-study_sections-and-user_credits-t
   ]
 }
