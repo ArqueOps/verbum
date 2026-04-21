@@ -11,7 +11,7 @@ import { ViewTracker } from "./ViewTracker";
 export const revalidate = 3600;
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum-two.vercel.app";
 
 interface StudyPageProps {
   params: Promise<{ slug: string }>;
@@ -127,7 +127,7 @@ export default async function StudyPage({ params }: StudyPageProps) {
     position: s.order_index,
   }));
 
-  const studyUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app"}/estudos/${study.slug}`;
+  const studyUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum-two.vercel.app"}/estudos/${study.slug}`;
 
   return (
     <article className="mx-auto max-w-3xl space-y-8 py-8">

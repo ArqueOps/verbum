@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { listUsers } from "@/lib/admin-users";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { listUsers } from "@/lib/admin-users";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

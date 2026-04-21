@@ -97,12 +97,17 @@ async function mockBlogApis(page: Page) {
     }),
   );
 
-  // Mock profiles table (used by Header/CreditsBadge)
-  await page.route("**/rest/v1/profiles*", (route) =>
+  // Mock check_user_daily_limit RPC (used by Header/DailyLimitBadge)
+  await page.route("**/rest/v1/rpc/check_user_daily_limit*", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([{ credits_remaining: 10, role: "user" }]),
+      body: JSON.stringify({
+        has_active_subscription: false,
+        studies_today: 0,
+        daily_limit: 1,
+        can_generate: true,
+      }),
     }),
   );
 

@@ -1,8 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { Toaster } from "sonner";
+import { OfflineBanner } from "@/components/pwa/offline-banner";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import "./globals.css";
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -18,7 +21,18 @@ const inter = Inter({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum.vercel.app";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum-two.vercel.app";
+
+// Root layout mounts Header → DailyLimitBadge → useDailyLimit → Supabase
+// browser client. When NEXT_PUBLIC_SUPABASE_* env vars are absent during a
+// Vercel preview build, prerender of /_not-found throws. Forcing dynamic
+// rendering across the app avoids static generation and defers all rendering
+// to runtime where env vars are always present.
+export const dynamic = "force-dynamic";
+
+export const viewport: Viewport = {
+  themeColor: "#1E3A5F",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -44,6 +58,9 @@ export default function RootLayout({
           <main className="mx-auto w-full max-w-[1200px] flex-1 flex flex-col px-4 pt-6 pb-12 sm:px-8">
             {children}
           </main>
+          <Footer />
+          <OfflineBanner />
+          <InstallPrompt />
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>

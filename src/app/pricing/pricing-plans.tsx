@@ -14,10 +14,10 @@ interface UserState {
 }
 
 const PLAN_FEATURES_BASE = [
-  "Créditos ilimitados",
-  "Salvar estudos gerados",
+  "Estudos ilimitados (sem limite diário)",
+  "Histórico completo de estudos",
+  "Escolher se cada estudo é público ou privado",
   "Publicar estudos no blog",
-  "Exportação em PDF",
   "Suporte prioritário",
 ];
 
@@ -43,15 +43,18 @@ export function PricingPlans() {
         return;
       }
 
-      const { data: userCredits } = await supabase
-        .from("user_credits")
-        .select("has_active_subscription")
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("id")
         .eq("user_id", user.id)
-        .single();
+        .eq("status", "active")
+        .gt("current_period_end", new Date().toISOString())
+        .limit(1)
+        .maybeSingle();
 
       setUserState({
         isAuthenticated: true,
-        hasActiveSubscription: userCredits?.has_active_subscription ?? false,
+        hasActiveSubscription: !!subscription,
       });
       setIsHydrated(true);
     }
@@ -100,34 +103,20 @@ export function PricingPlans() {
   const subscriptionActive = isHydrated && userState.hasActiveSubscription;
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
       {/* Gratuito */}
       <PricingCard
         planName="Gratuito"
         price="R$0"
         description="Comece a explorar estudos bíblicos com IA sem custo."
         features={[
-          "3 créditos de geração",
-          "Salvar estudos gerados",
+          "1 estudo por dia",
+          "Histórico dos últimos 3 estudos",
+          "Estudos sempre públicos no blog",
           "Acesso ao blog público",
         ]}
         ctaText="Começar Grátis"
-        ctaHref="/register"
-      />
-
-      {/* 10 Créditos */}
-      <PricingCard
-        planName="10 Créditos"
-        price="R$9,90"
-        description="Ideal para quem quer aprofundar seus estudos."
-        features={[
-          "10 créditos de geração",
-          "Salvar estudos gerados",
-          "Publicar estudos no blog",
-          "Exportação em PDF",
-        ]}
-        ctaText="Comprar"
-        ctaHref="#checkout-10"
+        ctaHref="/auth/signup"
       />
 
       {/* Assinatura Mensal */}
@@ -147,10 +136,10 @@ export function PricingPlans() {
       {/* Assinatura Anual */}
       <PricingCard
         planName="Assinatura Anual"
-        price="R$190,00"
+        price="R$199,00"
         priceLabel="/ano"
-        description="Economize com o plano anual. Melhor custo-benefício."
-        features={[...PLAN_FEATURES_BASE, "Economia de R$48,80 por ano"]}
+        description="2 meses grátis — paga 10, leva 12."
+        features={[...PLAN_FEATURES_BASE, "Economia de R$39,80 por ano"]}
         ctaText={subscriptionActive ? "Plano ativo" : "Assinar Anual"}
         onCtaClick={() => handleCheckout("annual")}
         isDisabled={subscriptionActive}

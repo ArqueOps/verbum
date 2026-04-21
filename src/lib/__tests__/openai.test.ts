@@ -36,8 +36,8 @@ describe("parseStudyResponse", () => {
 
     // Assert
     expect(result).toHaveLength(7);
-    expect(result[0]!.section_type).toBe("context");
-    expect(result[6]!.section_type).toBe("reflection");
+    expect(result[0]!.section_type).toBe("panorama");
+    expect(result[6]!.section_type).toBe("conclusao");
     result.forEach((section, i) => {
       expect(section.order_index).toBe(i);
       expect(section.title).toBeTruthy();
@@ -234,7 +234,7 @@ describe("studySectionSchema", () => {
   it("should validate a correct study section", () => {
     // Arrange
     const section = {
-      section_type: "context",
+      section_type: "panorama",
       title: "Contexto Historico",
       content: "O livro de Genesis...",
       order_index: 0,
@@ -250,7 +250,7 @@ describe("studySectionSchema", () => {
   it("should reject section with missing title", () => {
     // Arrange
     const section = {
-      section_type: "context",
+      section_type: "panorama",
       content: "Content here",
       order_index: 0,
     };
@@ -265,7 +265,7 @@ describe("studySectionSchema", () => {
   it("should reject section with missing content", () => {
     // Arrange
     const section = {
-      section_type: "context",
+      section_type: "panorama",
       title: "Title",
       order_index: 0,
     };
@@ -280,7 +280,7 @@ describe("studySectionSchema", () => {
   it("should reject section with empty title", () => {
     // Arrange
     const section = {
-      section_type: "context",
+      section_type: "panorama",
       title: "",
       content: "Content",
       order_index: 0,
@@ -296,7 +296,7 @@ describe("studySectionSchema", () => {
   it("should reject section with empty content", () => {
     // Arrange
     const section = {
-      section_type: "context",
+      section_type: "panorama",
       title: "Title",
       content: "",
       order_index: 0,
@@ -328,13 +328,13 @@ describe("studySectionSchema", () => {
   it("should reject section with order_index out of range", () => {
     // Arrange
     const sectionTooHigh = {
-      section_type: "context",
+      section_type: "panorama",
       title: "Title",
       content: "Content",
       order_index: 7,
     };
     const sectionNegative = {
-      section_type: "context",
+      section_type: "panorama",
       title: "Title",
       content: "Content",
       order_index: -1,
@@ -348,7 +348,7 @@ describe("studySectionSchema", () => {
   it("should reject section with non-integer order_index", () => {
     // Arrange
     const section = {
-      section_type: "context",
+      section_type: "panorama",
       title: "Title",
       content: "Content",
       order_index: 1.5,
@@ -375,10 +375,10 @@ describe("studyResponseSchema", () => {
   });
 
   it("should reject when not all section_types are present", () => {
-    // Arrange — 7 sections but with duplicate "context" instead of "reflection"
+    // Arrange — 7 sections but with duplicate "panorama" instead of "conclusao"
     const sections = makeValidSections();
     sections[6] = {
-      section_type: "context",
+      section_type: "panorama",
       title: "Duplicate",
       content: "Duplicate",
       order_index: 6,
@@ -425,7 +425,7 @@ describe("studyResponseSchema", () => {
     const sections = [
       ...makeValidSections(),
       {
-        section_type: "context" as const,
+        section_type: "panorama" as const,
         title: "Extra",
         content: "Extra",
         order_index: 0,
@@ -481,13 +481,13 @@ describe("STUDY_SECTION_TYPES", () => {
 
   it("should contain all expected types", () => {
     const expected = [
-      "context",
-      "word_study",
-      "theology",
-      "cross_references",
-      "commentaries",
-      "application",
-      "reflection",
+      "panorama",
+      "contexto",
+      "estrutura_contextual",
+      "sintese_exegetica",
+      "analise_hermeneutica",
+      "analise_escatologica",
+      "conclusao",
     ];
     expect([...STUDY_SECTION_TYPES]).toEqual(expected);
   });

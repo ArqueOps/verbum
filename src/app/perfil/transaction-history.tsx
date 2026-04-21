@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface TransactionEvent {
@@ -62,29 +62,32 @@ export function TransactionHistory({ userId }: TransactionHistoryProps) {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const fetchEvents = useCallback(async () => {
-    setLoading(true);
-    const supabase = createClient();
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-
-    const { data, count } = await supabase
-      .from("subscription_events")
-      .select("id, event_type, amount, status, created_at", {
-        count: "exact",
-      })
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-
-    setEvents(data ?? []);
-    setTotal(count ?? 0);
-    setLoading(false);
-  }, [userId, page]);
-
   useEffect(() => {
+    let cancelled = false;
+    async function fetchEvents() {
+      setLoading(true);
+      const supabase = createClient();
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, count } = await supabase
+        .from("subscription_events")
+        .select("id, event_type, amount, status, created_at", {
+          count: "exact",
+        })
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (!cancelled) {
+        setEvents(data ?? []);
+        setTotal(count ?? 0);
+        setLoading(false);
+      }
+    }
     fetchEvents();
-  }, [fetchEvents]);
+    return () => { cancelled = true; };
+  }, [userId, page]);
 
   return (
     <section className="space-y-4">

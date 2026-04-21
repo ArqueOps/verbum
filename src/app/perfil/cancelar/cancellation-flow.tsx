@@ -12,30 +12,30 @@ interface Subscription {
 }
 
 const CANCELLATION_REASONS = [
-  "Preco alto demais",
-  "Nao uso com frequencia suficiente",
-  "Problemas tecnicos recorrentes",
+  "Preço alto demais",
+  "Não uso com frequência suficiente",
+  "Problemas técnicos recorrentes",
   "Encontrei uma alternativa melhor",
-  "Conteudo insuficiente para minha necessidade",
+  "Conteúdo insuficiente para minha necessidade",
   "Dificuldade de uso da plataforma",
-  "Mudanca na situacao financeira",
-  "Nao atendeu minhas expectativas",
-  "Falta de recursos que preciso",
+  "Mudança na situação financeira",
+  "Não atendeu minhas expectativas",
+  "Vou pausar temporariamente",
   "Outro motivo",
 ] as const;
 
 const BENEFITS = [
-  "Geracao ilimitada de estudos",
-  "Acesso a todos os estudos salvos",
-  "Exportacao em PDF",
-  "Suporte prioritario",
+  "Estudos ilimitados (sem limite diário)",
+  "Histórico completo de estudos",
+  "Escolher se cada estudo é público ou privado",
+  "Suporte prioritário",
 ] as const;
 
 function getPlanLabel(planId: string) {
   if (planId.includes("annual") || planId.includes("anual")) {
     return { name: "Anual", price: "R$ 199,00/ano" };
   }
-  return { name: "Mensal", price: "R$ 19,90/mes" };
+  return { name: "Mensal", price: "R$ 19,90/mês" };
 }
 
 function formatDate(dateStr: string) {
@@ -122,8 +122,7 @@ export function CancellationFlow({
             Assinatura cancelada
           </h2>
           <p className="text-sm text-foreground/60">
-            Sua assinatura foi cancelada com sucesso. Voce sera redirecionado
-            em instantes.
+            Sua assinatura foi cancelada. Você será redirecionado em instantes.
           </p>
         </div>
       </div>
@@ -193,7 +192,7 @@ function StepPlanDetails({
   return (
     <>
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Dados Atuais</h2>
+        <h2 className="text-lg font-semibold text-foreground">Dados atuais</h2>
         <p className="mt-1 text-sm text-foreground/60">
           Confira os detalhes do seu plano atual.
         </p>
@@ -207,13 +206,13 @@ function StepPlanDetails({
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-foreground/60">Inicio</span>
+          <span className="text-foreground/60">Início</span>
           <span className="text-foreground">
             {formatDate(subscription.current_period_start)}
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-foreground/60">Proxima renovacao</span>
+          <span className="text-foreground/60">Próxima renovação</span>
           <span className="text-foreground">
             {formatDate(subscription.current_period_end)}
           </span>
@@ -222,7 +221,7 @@ function StepPlanDetails({
 
       <div>
         <p className="mb-2 text-sm font-medium text-foreground">
-          Beneficios que voce perdera:
+          Benefícios que você perderá:
         </p>
         <ul className="space-y-1.5">
           {BENEFITS.map((benefit) => (
@@ -263,7 +262,7 @@ function StepReason({
     <>
       <div>
         <h2 className="text-lg font-semibold text-foreground">
-          Motivo do Cancelamento
+          Motivo do cancelamento
         </h2>
         <p className="mt-1 text-sm text-foreground/60">
           Selecione o principal motivo para o cancelamento.
@@ -331,7 +330,7 @@ function StepFeedback({
           Feedback (opcional)
         </h2>
         <p className="mt-1 text-sm text-foreground/60">
-          Conte-nos mais sobre sua experiencia.
+          Conte-nos mais sobre sua experiência.
         </p>
       </div>
 
@@ -340,7 +339,7 @@ function StepFeedback({
           htmlFor="feedback"
           className="block text-sm font-medium text-foreground"
         >
-          Conte-nos mais sobre sua experiencia (opcional)
+          Conte-nos mais sobre sua experiência (opcional)
         </label>
         <textarea
           id="feedback"
@@ -394,7 +393,7 @@ function StepConfirmation({
   return (
     <>
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Confirmacao</h2>
+        <h2 className="text-lg font-semibold text-foreground">Confirmação</h2>
         <p className="mt-1 text-sm text-foreground/60">
           Revise os dados antes de confirmar o cancelamento.
         </p>
@@ -422,14 +421,15 @@ function StepConfirmation({
         </div>
       )}
 
+      {/* Dois botões IGUAIS (pedido no features-completo.md) */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
           onClick={onConfirm}
           disabled={isSubmitting}
-          className="flex-1 rounded-lg border border-red-300 bg-background px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+          className="flex-1 rounded-lg border border-foreground/20 bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/5 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSubmitting ? "Cancelando..." : "Quero cancelar"}
+          {isSubmitting ? "Cancelando…" : "Quero cancelar"}
         </button>
         <button
           type="button"

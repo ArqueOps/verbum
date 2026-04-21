@@ -67,8 +67,8 @@ export async function grantSubscriptionAction(
     };
   }
 
-  const supabase = await createClient();
   try {
+    const supabase = await createClient();
     await grantSubscription(supabase, {
       userId: parsed.data.userId,
       planId: parsed.data.planInterval,
@@ -103,12 +103,12 @@ export async function revokeSubscriptionAction(
     };
   }
 
-  const supabase = await createClient();
   try {
+    const supabase = await createClient();
     await revokeSubscription(supabase, {
       userId: parsed.data.userId,
-      adminId,
       reason: parsed.data.reason,
+      adminId,
     });
   } catch (err) {
     return { success: false, message: err instanceof Error ? err.message : "Erro desconhecido." };
@@ -138,8 +138,8 @@ export async function extendSubscriptionAction(
     };
   }
 
-  const supabase = await createClient();
   try {
+    const supabase = await createClient();
     await extendSubscription(supabase, {
       userId: parsed.data.userId,
       additionalDays: parsed.data.days,
@@ -157,7 +157,7 @@ export async function deactivateAccountAction(
   _prevState: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const adminId = await requireAdmin();
+  await requireAdmin();
 
   const raw = {
     userId: formData.get("userId") as string,
@@ -172,8 +172,8 @@ export async function deactivateAccountAction(
     };
   }
 
-  const supabase = await createClient();
   try {
+    const supabase = await createClient();
     await deactivateAccount(supabase, parsed.data.userId);
   } catch (err) {
     return { success: false, message: err instanceof Error ? err.message : "Erro desconhecido." };

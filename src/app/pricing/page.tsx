@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     description:
       "Escolha o plano ideal para seus estudos bíblicos com IA. Comece grátis ou desbloqueie recursos avançados.",
     type: "website",
-    url: "https://verbum.vercel.app/pricing",
+    url: "https://verbum-two.vercel.app/pricing",
   },
 };
 

@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-auth";
-import { grantSubscription } from "@/lib/admin-users";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { grantSubscription } from "@/lib/admin-users";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

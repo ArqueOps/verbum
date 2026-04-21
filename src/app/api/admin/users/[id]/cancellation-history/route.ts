@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getCancellationHistory } from "@/lib/admin-users";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getCancellationHistory } from "@/lib/admin-users";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -1,0 +1,16 @@
+{
+  "name": "migrate-firebase-auth",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone Firebase Auth to Supabase Auth migration script",
+  "scripts": {
+    "migrate": "npx tsx src/migrate.ts",
+    "migrate:dry-run": "DRY_RUN=true npx tsx src/migrate.ts"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

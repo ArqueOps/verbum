@@ -14,6 +14,8 @@ export interface AdminUser {
   last_sign_in_at: string | null;
 }
 
+export type AdminUserRow = AdminUser;
+
 export interface ListUsersParams {
   search?: string;
   page?: number;
@@ -52,6 +54,8 @@ export interface CancellationEntry {
   reason: string;
   canceled_at: string;
   admin_id: string | null;
+  action_type: string | null;
+  canceled_by: string | null;
 }
 
 export async function listUsers(
@@ -64,7 +68,7 @@ export async function listUsers(
   let query = supabase
     .from("profiles")
     .select(
-      "id, display_name, role, created_at, email:id, last_sign_in_at, studies(count), subscriptions(status, plan_id, current_period_end)",
+      "id, display_name, role, created_at, last_sign_in_at, email:id, studies(count), subscriptions(status, plan_id, current_period_end)",
       { count: "exact" },
     );
 
@@ -93,7 +97,7 @@ export async function listUsers(
       (s) => s.status === "active" || s.status === "past_due",
     );
 
-    const planLabels: Record<string, string> = {
+    const planLabelMap: Record<string, string> = {
       monthly: "Mensal",
       annual: "Anual",
     };
@@ -107,9 +111,9 @@ export async function listUsers(
       study_count: studies?.[0]?.count ?? 0,
       subscription_status: (activeSub?.status as AdminUser["subscription_status"]) ?? null,
       subscription_plan: activeSub?.plan_id ?? null,
-      plan_label: activeSub ? (planLabels[activeSub.plan_id] ?? activeSub.plan_id) : null,
+      plan_label: activeSub ? (planLabelMap[activeSub.plan_id] ?? activeSub.plan_id) : null,
       subscription_end: activeSub?.current_period_end ?? null,
-      last_sign_in_at: (row.last_sign_in_at as string | null) ?? null,
+      last_sign_in_at: row.last_sign_in_at as string | null,
     };
   });
 
@@ -251,7 +255,7 @@ export async function getCancellationHistory(
 ): Promise<CancellationEntry[]> {
   const { data, error } = await supabase
     .from("subscription_cancellations")
-    .select("id, user_id, reason, canceled_at, admin_id")
+    .select("id, user_id, reason, canceled_at, admin_id, action_type, canceled_by")
     .eq("user_id", userId)
     .order("canceled_at", { ascending: true });
 
