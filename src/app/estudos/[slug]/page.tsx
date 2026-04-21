@@ -1,12 +1,59 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { Eye } from "lucide-react";
 import { StudySections } from "@/components/study/StudySections";
+import { ShareButtons } from "@/components/study/ShareButtons";
+import { StudyCTA } from "@/components/study/StudyCTA";
+import { ViewTracker } from "./ViewTracker";
 
 export const revalidate = 3600;
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum-two.vercel.app";
+
 interface StudyPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: StudyPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const study = await fetchStudy(slug);
+
+  if (!study) return {};
+
+  const ogImageUrl = `${SITE_URL}/api/og/${slug}`;
+
+  return {
+    title: `${study.title} — Verbum`,
+    description: `Estudo bíblico sobre ${study.verse_reference}`,
+    alternates: {
+      canonical: `/estudos/${slug}`,
+    },
+    openGraph: {
+      title: study.title,
+      description: `Estudo bíblico sobre ${study.verse_reference}`,
+      type: "article",
+      url: `${SITE_URL}/estudos/${slug}`,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          type: "image/png",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: study.title,
+      description: `Estudo bíblico sobre ${study.verse_reference}`,
+      images: [ogImageUrl],
+    },
+  };
 }
 
 export async function generateStaticParams() {
@@ -32,7 +79,7 @@ async function fetchStudy(slug: string) {
   const { data: study } = await supabase
     .from("studies")
     .select(
-      `id, title, verse_reference, created_at, published_at, slug,
+      `id, title, verse_reference, created_at, published_at, slug, view_count,
       profiles!owner_id(display_name),
       bible_versions!version_id(abbr),
       study_sections(id, title, content, order_index)`
@@ -50,6 +97,12 @@ function formatDatePtBR(dateString: string): string {
     month: "long",
     year: "numeric",
   });
+}
+
+function formatViewCount(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  return count.toString();
 }
 
 export default async function StudyPage({ params }: StudyPageProps) {
@@ -73,6 +126,8 @@ export default async function StudyPage({ params }: StudyPageProps) {
     content: typeof s.content === "string" ? s.content : String(s.content),
     position: s.order_index,
   }));
+
+  const studyUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://verbum-two.vercel.app"}/estudos/${study.slug}`;
 
   return (
     <article className="mx-auto max-w-3xl space-y-8 py-8">
@@ -99,10 +154,26 @@ export default async function StudyPage({ params }: StudyPageProps) {
               <span>{authorName}</span>
             </>
           )}
+          {study.view_count > 0 && (
+            <>
+              <span aria-hidden="true">&middot;</span>
+              <span className="inline-flex items-center gap-1">
+                <Eye className="size-3.5" />
+                {formatViewCount(study.view_count)}{" "}
+                {study.view_count === 1 ? "visualização" : "visualizações"}
+              </span>
+            </>
+          )}
         </div>
+
+        <ShareButtons title={study.title} url={studyUrl} />
       </header>
 
       <StudySections sections={sections} defaultAllOpen />
+
+      <StudyCTA />
+
+      <ViewTracker slug={study.slug} />
     </article>
   );
 }

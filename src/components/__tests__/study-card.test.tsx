@@ -2,6 +2,9 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("lucide-react", () => ({
+  Eye: ({ className }: { className?: string }) => (
+    <svg data-testid="eye-icon" className={className} />
+  ),
   Globe: ({ className }: { className?: string }) => (
     <svg data-testid="globe-icon" className={className} />
   ),

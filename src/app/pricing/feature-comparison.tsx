@@ -3,64 +3,56 @@ import { Check, X } from "lucide-react";
 interface FeatureRow {
   feature: string;
   gratuito: boolean;
-  pacote10: boolean;
-  pacote50: boolean;
   mensal: boolean;
+  anual: boolean;
 }
 
 const features: FeatureRow[] = [
   {
     feature: "Geração de estudos com IA",
     gratuito: true,
-    pacote10: true,
-    pacote50: true,
     mensal: true,
-  },
-  {
-    feature: "Salvar estudos gerados",
-    gratuito: true,
-    pacote10: true,
-    pacote50: true,
-    mensal: true,
+    anual: true,
   },
   {
     feature: "Acesso ao blog público",
     gratuito: true,
-    pacote10: true,
-    pacote50: true,
     mensal: true,
+    anual: true,
   },
   {
-    feature: "Publicar estudos no blog",
-    gratuito: false,
-    pacote10: true,
-    pacote50: true,
+    feature: '"O que a Bíblia diz sobre...?"',
+    gratuito: true,
     mensal: true,
+    anual: true,
   },
   {
-    feature: "Exportação em PDF",
+    feature: "Estudos ilimitados (sem limite diário)",
     gratuito: false,
-    pacote10: true,
-    pacote50: true,
     mensal: true,
+    anual: true,
   },
   {
-    feature: "Créditos ilimitados",
+    feature: "Histórico completo de estudos",
     gratuito: false,
-    pacote10: false,
-    pacote50: false,
     mensal: true,
+    anual: true,
+  },
+  {
+    feature: "Escolher se cada estudo é público ou privado",
+    gratuito: false,
+    mensal: true,
+    anual: true,
   },
   {
     feature: "Suporte prioritário",
     gratuito: false,
-    pacote10: false,
-    pacote50: false,
     mensal: true,
+    anual: true,
   },
 ];
 
-const planNames = ["Gratuito", "10 Créditos", "50 Créditos", "Mensal"];
+const planNames = ["Gratuito", "Mensal", "Anual"];
 
 function FeatureIcon({ included }: { included: boolean }) {
   return included ? (
@@ -110,13 +102,10 @@ export function FeatureComparison() {
                   <FeatureIcon included={row.gratuito} />
                 </td>
                 <td className="px-4 py-3">
-                  <FeatureIcon included={row.pacote10} />
-                </td>
-                <td className="px-4 py-3">
-                  <FeatureIcon included={row.pacote50} />
-                </td>
-                <td className="px-4 py-3">
                   <FeatureIcon included={row.mensal} />
+                </td>
+                <td className="px-4 py-3">
+                  <FeatureIcon included={row.anual} />
                 </td>
               </tr>
             ))}

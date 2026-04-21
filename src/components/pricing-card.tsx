@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PricingCardProps {
@@ -9,9 +9,11 @@ interface PricingCardProps {
   description: string;
   features: string[];
   ctaText: string;
-  ctaHref: string;
+  ctaHref?: string;
+  onCtaClick?: () => void;
   isHighlighted?: boolean;
   isDisabled?: boolean;
+  isLoading?: boolean;
 }
 
 function isInternalRoute(href: string): boolean {
@@ -26,15 +28,17 @@ export function PricingCard({
   features,
   ctaText,
   ctaHref,
+  onCtaClick,
   isHighlighted = false,
   isDisabled = false,
+  isLoading = false,
 }: PricingCardProps) {
   const ctaClasses = cn(
     "inline-flex h-9 w-full items-center justify-center rounded-lg text-sm font-medium transition-all focus-visible:ring-3 focus-visible:ring-ring/50",
     isHighlighted
       ? "bg-primary text-primary-foreground hover:bg-primary/80"
       : "border border-border bg-background text-foreground hover:bg-muted",
-    isDisabled && "pointer-events-none opacity-50",
+    (isDisabled || isLoading) && "pointer-events-none opacity-50",
   );
 
   return (
@@ -77,11 +81,24 @@ export function PricingCard({
         ))}
       </ul>
 
-      {isInternalRoute(ctaHref) ? (
+      {onCtaClick ? (
+        <button
+          type="button"
+          onClick={onCtaClick}
+          disabled={isDisabled || isLoading}
+          className={ctaClasses}
+        >
+          {isLoading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            ctaText
+          )}
+        </button>
+      ) : ctaHref && isInternalRoute(ctaHref) ? (
         <Link href={ctaHref} className={ctaClasses} aria-disabled={isDisabled}>
           {ctaText}
         </Link>
-      ) : (
+      ) : ctaHref ? (
         <a
           href={ctaHref}
           className={ctaClasses}
@@ -90,7 +107,7 @@ export function PricingCard({
         >
           {ctaText}
         </a>
-      )}
+      ) : null}
     </div>
   );
 }

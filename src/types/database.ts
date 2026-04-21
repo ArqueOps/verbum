@@ -204,6 +204,7 @@ export type Database = {
           verse_reference: string
           verse_start: number | null
           version_id: number | null
+          view_count: number
         }
         Insert: {
           book_id?: number | null
@@ -224,6 +225,7 @@ export type Database = {
           verse_reference: string
           verse_start?: number | null
           version_id?: number | null
+          view_count?: number
         }
         Update: {
           book_id?: number | null
@@ -244,6 +246,7 @@ export type Database = {
           verse_reference?: string
           verse_start?: number | null
           version_id?: number | null
+          view_count?: number
         }
         Relationships: [
           {
@@ -345,57 +348,199 @@ export type Database = {
           },
         ]
       }
-      user_credits: {
+      subscriptions: {
         Row: {
-          created_at: string
-          credits_remaining: number
-          credits_used: number
-          has_active_subscription: boolean
           id: string
-          subscription_end: string | null
-          updated_at: string
           user_id: string
+          status: "active" | "past_due" | "canceled" | "expired"
+          plan_id: string
+          plan_interval: "monthly" | "annual" | null
+          current_period_start: string | null
+          current_period_end: string | null
+          caramelou_subscription_id: string | null
+          canceled_at: string | null
+          cancellation_reason: string | null
+          created_at: string
         }
         Insert: {
-          created_at?: string
-          credits_remaining?: number
-          credits_used?: number
-          has_active_subscription?: boolean
           id?: string
-          subscription_end?: string | null
-          updated_at?: string
           user_id: string
+          status?: "active" | "past_due" | "canceled" | "expired"
+          plan_id?: string
+          plan_interval?: "monthly" | "annual" | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          caramelou_subscription_id?: string | null
+          canceled_at?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
         }
         Update: {
-          created_at?: string
-          credits_remaining?: number
-          credits_used?: number
-          has_active_subscription?: boolean
           id?: string
-          subscription_end?: string | null
-          updated_at?: string
           user_id?: string
+          status?: "active" | "past_due" | "canceled" | "expired"
+          plan_id?: string
+          plan_interval?: "monthly" | "annual" | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          caramelou_subscription_id?: string | null
+          canceled_at?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "user_credits_user_id_fkey"
+            foreignKeyName: "subscriptions_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_admin_actions: {
+        Row: {
+          id: string
+          subscription_id: string | null
+          user_id: string
+          action_type: "grant" | "revoke" | "extend"
+          plan_interval: "monthly" | "annual" | null
+          period_months: number | null
+          extend_days: number | null
+          reason: string | null
+          performed_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          subscription_id?: string | null
+          user_id: string
+          action_type: "grant" | "revoke" | "extend"
+          plan_interval?: "monthly" | "annual" | null
+          period_months?: number | null
+          extend_days?: number | null
+          reason?: string | null
+          performed_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          subscription_id?: string | null
+          user_id?: string
+          action_type?: "grant" | "revoke" | "extend"
+          plan_interval?: "monthly" | "annual" | null
+          period_months?: number | null
+          extend_days?: number | null
+          reason?: string | null
+          performed_by?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_admin_actions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_cancellations: {
+        Row: {
+          id: string
+          user_id: string
+          subscription_id: string | null
+          reason: string | null
+          canceled_at: string
+          canceled_by: string | null
+          action_type: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          subscription_id?: string | null
+          reason?: string | null
+          canceled_at?: string
+          canceled_by?: string | null
+          action_type?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          subscription_id?: string | null
+          reason?: string | null
+          canceled_at?: string
+          canceled_by?: string | null
+          action_type?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_cancellations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_events: {
+        Row: {
+          id: string
+          event_id: string
+          event_type: string
+          user_id: string | null
+          payload: Json
+          processed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          event_type: string
+          user_id?: string | null
+          payload: Json
+          processed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          event_type?: string
+          user_id?: string | null
+          payload?: Json
+          processed_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      check_user_credits: {
+      check_user_daily_limit: {
         Args: {
           p_user_id: string
         }
         Returns: Json
+      }
+      save_study_with_daily_limit: {
+        Args: {
+          p_user_id: string
+          p_title: string
+          p_content: string
+          p_book?: string | null
+          p_chapter?: number | null
+          p_verse_start?: number | null
+          p_verse_end?: number | null
+          p_sections?: Json
+          p_version_id?: string | null
+          p_slug?: string | null
+        }
+        Returns: string
       }
       search_published_studies: {
         Args: {
@@ -412,26 +557,9 @@ export type Database = {
           book_name: string | null
           book_abbreviation: string | null
           book_testament: string | null
+          summary: string | null
+          author_name: string | null
         }[]
-      }
-      consume_credit_and_save_study: {
-        Args: {
-          p_user_id: string
-          p_slug: string
-          p_title: string
-          p_verse_reference: string
-          p_content: Json
-          p_model_used: string
-          p_book_id?: number
-          p_chapter?: number
-          p_verse_start?: number
-          p_verse_end?: number
-          p_version_id?: number
-          p_generation_time_ms?: number
-          p_language?: string
-          p_sections?: Json
-        }
-        Returns: Json
       }
     }
     Enums: {

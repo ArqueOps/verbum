@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Globe, GlobeLock, Loader2, Star } from "lucide-react";
+import { Eye, Globe, GlobeLock, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StudyCardProps {
@@ -13,10 +13,10 @@ interface StudyCardProps {
   verseReference?: string;
   createdAt: string;
   isPublic: boolean;
-  isFavorite?: boolean;
-  onToggleFavorite?: () => void;
   onTogglePublish?: () => void;
   publishLoading?: boolean;
+  visibilityLocked?: boolean;
+  viewCount?: number;
   href: string;
 }
 
@@ -49,10 +49,10 @@ export function StudyCard({
   verseReference,
   createdAt,
   isPublic,
-  isFavorite,
-  onToggleFavorite,
   onTogglePublish,
   publishLoading,
+  visibilityLocked = false,
+  viewCount,
   href,
 }: StudyCardProps) {
   const passage =
@@ -67,27 +67,6 @@ export function StudyCard({
     >
       <div className="flex items-start justify-between">
         <span className="text-xs font-medium text-primary/70">{passage}</span>
-        {onToggleFavorite != null && (
-          <button
-            type="button"
-            aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onToggleFavorite();
-            }}
-            className="relative z-10 rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-amber-500"
-          >
-            <Star
-              className={cn(
-                "size-4 transition-colors",
-                isFavorite
-                  ? "fill-amber-500 text-amber-500"
-                  : "fill-none text-muted-foreground",
-              )}
-            />
-          </button>
-        )}
       </div>
 
       <h3 className="line-clamp-2 text-sm font-semibold text-card-foreground group-hover:text-primary">
@@ -95,28 +74,49 @@ export function StudyCard({
       </h3>
 
       <div className="mt-auto flex items-center justify-between">
-        <time className="text-xs text-muted-foreground" dateTime={createdAt}>
-          {formattedDate}
-        </time>
+        <div className="flex items-center gap-3">
+          <time className="text-xs text-muted-foreground" dateTime={createdAt}>
+            {formattedDate}
+          </time>
+          {viewCount != null && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Eye className="size-3" />
+              {viewCount.toLocaleString("pt-BR")} {viewCount === 1 ? "visualização" : "visualizações"}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1.5">
           {onTogglePublish && (
             <button
               type="button"
-              aria-label={isPublic ? "Despublicar estudo" : "Publicar estudo"}
-              disabled={publishLoading}
+              aria-label={
+                visibilityLocked
+                  ? "Controle de visibilidade exclusivo para assinantes"
+                  : isPublic
+                    ? "Marcar como privado"
+                    : "Marcar como público"
+              }
+              disabled={publishLoading || visibilityLocked}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onTogglePublish();
               }}
-              className="relative z-10 rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+              className="relative z-10 rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              title={
+                visibilityLocked
+                  ? "Plano gratuito: estudos são sempre públicos. Assine para escolher."
+                  : undefined
+              }
             >
               {publishLoading ? (
                 <Loader2 className="size-3.5 animate-spin" />
+              ) : visibilityLocked ? (
+                <Lock className="size-3.5" />
               ) : isPublic ? (
-                <GlobeLock className="size-3.5" />
-              ) : (
                 <Globe className="size-3.5" />
+              ) : (
+                <GlobeLock className="size-3.5" />
               )}
             </button>
           )}

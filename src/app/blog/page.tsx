@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Blog | Verbum",
   description:
     "Explore estudos bíblicos aprofundados gerados com inteligência artificial.",
+  alternates: {
+    canonical: "/blog",
+  },
 };
 
 export default function BlogPage() {

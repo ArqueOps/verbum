@@ -1,7 +1,12 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_ROUTES = ["/login", "/signup", "/auth/callback", "/auth/forgot-password", "/auth/reset-password", "/blog", "/estudos"];
+export const PUBLIC_ROUTES_PREFIX = ["/pricing", "/login", "/signup", "/auth/callback", "/auth/forgot-password", "/auth/reset-password", "/auth/signup", "/blog", "/estudos", "/api/og", "/perguntar"];
+export const PUBLIC_ROUTES_EXACT = ["/"];
+
+export function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES_EXACT.includes(pathname) || PUBLIC_ROUTES_PREFIX.some((route) => pathname.startsWith(route));
+}
 
 export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -34,10 +39,8 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
 
-  // Redirect unauthenticated users to /login for protected routes
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute(pathname)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);
