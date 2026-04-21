@@ -310,6 +310,86 @@ export type Database = {
           },
         ]
       }
+<<<<<<< HEAD
+=======
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_credits: {
+        Row: {
+          balance: number
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+>>>>>>> origin/feature/task-48719ebc-rls-policies-for-study_sections-and-user_credits-t
       user_api_credentials: {
         Row: {
           created_at: string
@@ -521,11 +601,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+<<<<<<< HEAD
       check_user_daily_limit: {
         Args: {
           p_user_id: string
         }
         Returns: Json
+=======
+      consume_credit_and_save_study: {
+        Args: {
+          p_title: string
+          p_slug: string
+          p_verse_reference: string
+          p_content: string
+          p_model_used: string
+          p_language?: string
+          p_sections?: Json
+        }
+        Returns: string
+      }
+      decrement_credits_on_study: {
+        Args: Record<string, never>
+        Returns: undefined
+>>>>>>> origin/feature/task-48719ebc-rls-policies-for-study_sections-and-user_credits-t
       }
       save_study_with_daily_limit: {
         Args: {
